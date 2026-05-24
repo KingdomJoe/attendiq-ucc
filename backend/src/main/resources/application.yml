@@ -1,0 +1,32 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: ucc-attendance
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ucc_attendance}
+    username: ${SPRING_DATASOURCE_USERNAME:ucc}
+    password: ${SPRING_DATASOURCE_PASSWORD:ucc_dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-jwt-secret-change-in-production-min-32-chars!!}
+    expiry-minutes: 480
+  qr:
+    ttl-seconds: 5
+  student-email-pattern: ${STUDENT_EMAIL_PATTERN:@ucc\.edu\.gh$}
+  cors-origins: ${APP_CORS_ORIGINS:http://localhost:5173}
