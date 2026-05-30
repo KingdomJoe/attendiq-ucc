@@ -22,7 +22,7 @@
 
 
     <!-- 2. QR Countdown Container -->
-    <div th:fragment="qr-container" id="qr-container-parent" class="text-center py-2">
+    <div th:fragment="qr-container" id="qr-container-parent" hx-get="/lecturer/session/qr" hx-trigger="every 5s" hx-swap="outerHTML" class="text-center py-2">
         <div class="relative mx-auto h-[220px] w-[220px]">
             <svg class="absolute inset-0" width="220" height="220" viewBox="0 0 220 220">
                 <circle cx="110" cy="110" r="104" fill="none" stroke="#e2e8f0" stroke-width="2.5" />
@@ -38,8 +38,7 @@
         <script th:inline="javascript">
             (function() {
                 const CIRC = 2 * Math.PI * 104; // 653.45
-                const expiresAt = /*[[${qr.expiresAt}]]*/ '';
-                const targetTime = new Date(expiresAt).getTime();
+                const targetTime = Date.now() + 5000;
                 const circle = document.getElementById('countdown-circle');
                 const text = document.getElementById('seconds-text');
 
@@ -63,7 +62,7 @@
                 
                 // Self clean-up when swapped
                 const observer = new MutationObserver((mutations, obs) => {
-                    if (!document.getElementById('countdown-circle')) {
+                    if (!circle || !circle.isConnected) {
                         clearInterval(intervalId);
                         obs.disconnect();
                     }
@@ -128,17 +127,16 @@
     </div>
 
 
-    <!-- 5. Lecturer Course List -->
     <div th:fragment="course-list" id="my-courses-container">
         <div th:if="${courses == null or courses.isEmpty()}" class="text-center py-4 text-xs text-slate-400">
             No courses assigned yet. Click "Add / Create" to get started.
         </div>
         <div class="flex flex-wrap gap-2">
-            <div th:each="c : ${courses}" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+            <a th:each="c : ${courses}" th:href="'/lecturer/course/' + ${c.id}" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs hover:bg-slate-100 hover:border-attendiq transition-all">
                 <i class="ti ti-book text-attendiq"></i>
-                <span class="font-medium text-slate-800" th:text="${c.courseCode}">CSC301</span>
+                <span class="font-semibold text-slate-800" th:text="${c.courseCode}">CSC301</span>
                 <span class="text-slate-500" th:text="${c.courseName}">Java Programming</span>
-            </div>
+            </a>
         </div>
     </div>
 

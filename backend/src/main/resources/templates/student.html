@@ -22,7 +22,7 @@
     <div class="grid gap-4 lg:grid-cols-2">
         
         <!-- Left Card: Mark Attendance Scanner Flow -->
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
             <h2 class="mb-4 text-sm font-medium">Mark attendance</h2>
 
             <div id="scanner-card-content">
@@ -81,11 +81,11 @@
         </div>
 
         <!-- Right Card: Attendance Logs History -->
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
             <h2 class="mb-4 text-sm font-medium">Attendance history</h2>
             
-            <div class="max-h-[320px] overflow-y-auto border border-slate-100 rounded-lg p-1">
-                <table class="w-full border-collapse text-sm">
+            <div class="max-h-[320px] overflow-y-auto border border-slate-100 rounded-lg p-1 overflow-x-auto">
+                <table class="w-full min-w-[400px] border-collapse text-sm">
                     <thead>
                         <tr class="border-b border-slate-200 text-left text-[11px] font-medium uppercase tracking-wide text-slate-500">
                             <th class="px-2 py-2">Course</th>
@@ -107,7 +107,7 @@
     </div>
 
     <!-- My Courses Section -->
-    <div class="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="mt-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-sm font-medium"><i class="ti ti-book-2"></i> My Courses</h2>
             <button type="button" onclick="toggleJoinCourse()" class="btn-attendiq-outline text-xs">
@@ -163,14 +163,34 @@
     // Detect mobile vs desktop for camera selection heuristics
     const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-    // Initialize browser fingerprinting
-    FingerprintJS.load()
-        .then(fp => fp.get())
-        .then(result => {
-            fingerprint = result.visitorId;
-            const fpInput = document.getElementById("hidden-fingerprint");
-            if (fpInput) fpInput.value = fingerprint;
-        });
+    function fallbackFingerprint() {
+        let localFp = localStorage.getItem("attendiq_fingerprint");
+        if (!localFp) {
+            localFp = "fallback_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem("attendiq_fingerprint", localFp);
+        }
+        fingerprint = localFp;
+        const fpInput = document.getElementById("hidden-fingerprint");
+        if (fpInput) fpInput.value = fingerprint;
+    }
+
+    // Initialize browser fingerprinting safely
+    if (typeof FingerprintJS !== 'undefined') {
+        FingerprintJS.load()
+            .then(fp => fp.get())
+            .then(result => {
+                fingerprint = result.visitorId;
+                const fpInput = document.getElementById("hidden-fingerprint");
+                if (fpInput) fpInput.value = fingerprint;
+            })
+            .catch(err => {
+                console.warn("FingerprintJS failed to load:", err);
+                fallbackFingerprint();
+            });
+    } else {
+        console.warn("FingerprintJS not found, using localStorage fallback.");
+        fallbackFingerprint();
+    }
 
     function toggleJoinCourse() {
         const panel = document.getElementById('join-course-panel');

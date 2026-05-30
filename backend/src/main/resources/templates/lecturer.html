@@ -11,7 +11,10 @@
     </span>
 </div>
 
-<main class="mx-auto max-w-6xl px-5 py-5">
+<!-- Toast container for real-time check-ins -->
+<div id="toast-notification-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+<main class="mx-auto max-w-6xl px-4 py-5 sm:px-6">
     <div id="error-alert" class="mb-4"></div>
 
     <!-- Live Toast notification for export -->
@@ -30,7 +33,7 @@
     <div class="grid gap-4 lg:grid-cols-2">
         
         <!-- Left Card: Session Control -->
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-sm font-medium">Session control</h2>
                 <span th:if="${activeSession != null}" class="badge-live">
@@ -85,7 +88,7 @@
         </div>
 
         <!-- Right Card: Attendance Roster -->
-        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-sm font-medium">Attendance</h2>
                 <span id="attendance-count-summary" class="text-xs text-slate-500">
@@ -93,8 +96,8 @@
                 </span>
             </div>
 
-            <div class="max-h-[310px] overflow-y-auto min-h-[160px] border border-slate-100 rounded-lg p-1">
-                <table class="w-full border-collapse text-sm">
+            <div class="max-h-[310px] overflow-y-auto min-h-[160px] border border-slate-100 rounded-lg p-1 overflow-x-auto">
+                <table class="w-full border-collapse text-sm min-w-[380px]">
                     <thead>
                         <tr class="border-b border-slate-200 text-left text-[11px] font-medium uppercase tracking-wide text-slate-500">
                             <th class="px-2 py-2">Student</th>
@@ -142,7 +145,7 @@
     </div>
 
     <!-- Course Management Section -->
-    <div class="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="mt-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-sm font-medium"><i class="ti ti-book-2"></i> Manage Courses</h2>
             <button type="button" onclick="toggleCoursePanel()" class="btn-attendiq-outline text-xs">
@@ -197,7 +200,70 @@
     </div>
 </main>
 
-<script>
+<script th:inline="javascript">
+    const presentStudents = new Set();
+
+    function initPresentStudents() {
+        document.querySelectorAll('#attendance-table-body tr').forEach(row => {
+            if (row.querySelector('.badge-present')) {
+                const indexEl = row.querySelector('td:nth-child(2)');
+                if (indexEl) presentStudents.add(indexEl.innerText.trim());
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initPresentStudents();
+    });
+
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'attendance-table-body') {
+            updateRealtimeToasts();
+        }
+    });
+
+    function updateRealtimeToasts() {
+        const rows = document.querySelectorAll('#attendance-table-body tr');
+        rows.forEach(row => {
+            const badgePresent = row.querySelector('.badge-present');
+            if (badgePresent) {
+                const nameEl = row.querySelector('td:nth-child(1)');
+                const indexEl = row.querySelector('td:nth-child(2)');
+                const timeEl = row.querySelector('td:nth-child(3)');
+                if (nameEl && indexEl) {
+                    const name = nameEl.innerText.trim();
+                    const index = indexEl.innerText.trim();
+                    const time = timeEl ? timeEl.innerText.trim() : '—';
+                    if (!presentStudents.has(index)) {
+                        presentStudents.add(index);
+                        showRealtimeToast(name, index, time);
+                    }
+                }
+            }
+        });
+    }
+
+    function showRealtimeToast(name, index, time) {
+        const container = document.getElementById('toast-notification-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = 'bg-white/90 backdrop-blur-md border-l-4 border-emerald-500 rounded-xl shadow-lg p-4 text-xs text-slate-800 flex items-center gap-3 animate-slideIn pointer-events-auto transition-all duration-300';
+        toast.innerHTML = `
+            <div class="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700 text-base shrink-0">
+                <i class="ti ti-circle-check"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-semibold text-slate-900 truncate">${name}</p>
+                <p class="text-slate-500">${index} • Present at ${time}</p>
+            </div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('opacity-0', 'translate-x-full');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
     function triggerExport(sessionId) {
         // Download attachment via temporary navigation anchor
         const link = document.createElement('a');

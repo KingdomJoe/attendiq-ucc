@@ -38,12 +38,43 @@ public class StatsService {
             List<AttendanceSession> sessions = sessionRepository.findByLecturerIdAndStatusOrderByCreatedAtDesc(
                     lecturer.getUserId(), SessionStatus.ACTIVE);
             if (sessions.isEmpty()) {
-                return new StatsDtos.LecturerStats(0, 0, 0, 0, null, null);
+                return buildLecturerOverallStats(lecturer.getUserId());
             }
             session = sessions.get(0);
         }
         return buildLecturerStats(session);
     }
+
+    private StatsDtos.LecturerStats buildLecturerOverallStats(Long lecturerId) {
+        List<Course> courses = courseRepository.findByLecturerId(lecturerId);
+        long enrolled = courses.stream()
+                .mapToLong(c -> studentRepository.findByCourseId(c.getId()).size())
+                .sum();
+
+        List<AttendanceSession> sessions = sessionRepository.findByLecturerIdOrderByCreatedAtDesc(lecturerId);
+        long totalPresent = 0;
+        long totalSlots = 0;
+
+        for (AttendanceSession s : sessions) {
+            long sessEnrolled = studentRepository.findByCourseId(s.getCourse().getId()).size();
+            long sessPresent = attendanceRecordRepository.countBySessionId(s.getId());
+            totalPresent += sessPresent;
+            totalSlots += sessEnrolled;
+        }
+
+        long absent = Math.max(0, totalSlots - totalPresent);
+        int rate = totalSlots == 0 ? 0 : (int) Math.round((totalPresent * 100.0) / totalSlots);
+
+        return new StatsDtos.LecturerStats(
+                enrolled,
+                totalPresent,
+                absent,
+                rate,
+                null,
+                null
+        );
+    }
+
 
     public StatsDtos.StudentStats studentStats() {
         UserPrincipal student = SecurityUtils.requireRole(UserRole.STUDENT);
