@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{layout :: html_head('Lecturer Workspace')}"></head>
+<body class="min-h-screen bg-slate-50">
+
+<!-- Insert App Navigation Bar with custom Chip -->
+<div th:replace="~{layout :: app_nav(~{::#nav-chip}, false)}">
+    <span id="nav-chip" class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+        <i class="ti ti-presentation"></i>
+        <span th:text="${user.displayName}">Dr. Lecturer</span> · <span th:text="${user.emailOrCode}">LEC001</span>
+    </span>
+</div>
+
+<main class="mx-auto max-w-6xl px-5 py-5">
+    <div id="error-alert" class="mb-4"></div>
+
+    <!-- Live Toast notification for export -->
+    <div id="export-toast" class="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#1d9e75] px-5 py-2 text-sm text-white shadow-lg hidden">
+        Attendance exported as CSV
+    </div>
+
+    <!-- Stats Grid (Polled if active session) -->
+    <div id="stats-container" 
+         th:hx-get="${activeSession != null} ? '/lecturer/session/stats' : null" 
+         th:hx-trigger="${activeSession != null} ? 'every 3s' : null" 
+         hx-swap="outerHTML">
+        <div th:replace="~{fragments/lecturer-fragments :: stats-grid}"></div>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-2">
+        
+        <!-- Left Card: Session Control -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-sm font-medium">Session control</h2>
+                <span th:if="${activeSession != null}" class="badge-live">
+                    <span class="live-dot"></span> Live
+                </span>
+            </div>
+
+            <!-- Idle Mode View -->
+            <div th:if="${activeSession == null}">
+                <p class="mb-4 text-sm text-slate-500">
+                    Generate a dynamic QR code for your students to mark attendance in real time.
+                </p>
+                <form hx-post="/lecturer/session" hx-target="#error-alert" hx-swap="innerHTML">
+                    <div class="mb-3">
+                        <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                            Course
+                        </label>
+                        <select name="courseId" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-attendiq">
+                            <option th:each="c : ${courses}" th:value="${c.id}" th:text="${c.courseCode} + ' — ' + ${c.courseName}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                            Session type
+                        </label>
+                        <select name="sessionType" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-attendiq">
+                            <option value="LECTURE">Lecture</option>
+                            <option value="PRACTICAL">Practical</option>
+                            <option value="TUTORIAL">Tutorial</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-attendiq w-full py-2.5">
+                        <i class="ti ti-player-play"></i> Start session
+                    </button>
+                </form>
+            </div>
+
+            <!-- Active Mode View -->
+            <div th:if="${activeSession != null}">
+                <!-- QR countdown block (Polled every 5s) -->
+                <div id="qr-container-parent" hx-get="/lecturer/session/qr" hx-trigger="every 5s" hx-swap="outerHTML">
+                    <div th:replace="~{fragments/lecturer-fragments :: qr-container}"></div>
+                </div>
+
+                <hr class="my-4 border-slate-200" />
+                <form th:hx-post="'/lecturer/session/' + ${activeSession.id} + '/close'" hx-target="#error-alert" hx-swap="innerHTML">
+                    <button type="submit" class="btn-attendiq w-full bg-red-600 border-red-600 hover:bg-red-700">
+                        <i class="ti ti-player-stop"></i> End session
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Card: Attendance Roster -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="mb-4 flex items-center justify-between">
+                <h2 class="text-sm font-medium">Attendance</h2>
+                <span id="attendance-count-summary" class="text-xs text-slate-500">
+                    <span th:text="${stats.present}">0</span> / <span th:text="${stats.enrolled}">0</span> present
+                </span>
+            </div>
+
+            <div class="max-h-[310px] overflow-y-auto min-h-[160px] border border-slate-100 rounded-lg p-1">
+                <table class="w-full border-collapse text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-left text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                            <th class="px-2 py-2">Student</th>
+                            <th class="px-2 py-2">Index</th>
+                            <th class="px-2 py-2">Time</th>
+                            <th class="px-2 py-2">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-table-body" 
+                           th:hx-get="${activeSession != null} ? '/lecturer/session/attendance' : null" 
+                           th:hx-trigger="${activeSession != null} ? 'every 3s' : null" 
+                           hx-swap="innerHTML">
+                        <tr th:if="${activeSession == null or attendance == null or attendance.rows.isEmpty()}">
+                            <td colspan="4" class="py-6 text-center text-slate-400 text-xs">No active session roster</td>
+                        </tr>
+                        <tr th:if="${activeSession != null and attendance != null}" th:replace="~{fragments/lecturer-fragments :: attendance-rows}"></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <hr class="my-4 border-slate-200" />
+            <div class="flex gap-2">
+                <button type="button" 
+                        th:disabled="${activeSession == null}" 
+                        th:onclick="${activeSession != null} ? 'triggerExport(' + ${activeSession.id} + ')' : ''" 
+                        class="btn-attendiq-outline flex-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="ti ti-download"></i> Export CSV
+                </button>
+                <button type="button" 
+                        onclick="toggleAnalytics()" 
+                        class="btn-attendiq-outline flex-1 text-xs">
+                    <i class="ti ti-chart-bar"></i> Analytics
+                </button>
+            </div>
+
+            <!-- Course Analytics Container -->
+            <div id="analytics-outer" class="hidden mt-4 border-t border-slate-100 pt-3">
+                <h3 class="text-xs font-semibold text-slate-700 mb-2">Course Performance Summary</h3>
+                <div id="analytics-container" hx-get="/lecturer/analytics" hx-trigger="load" hx-swap="innerHTML">
+                    <p class="text-xs text-slate-400">Loading analytics...</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Course Management Section -->
+    <div class="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-medium"><i class="ti ti-book-2"></i> Manage Courses</h2>
+            <button type="button" onclick="toggleCoursePanel()" class="btn-attendiq-outline text-xs">
+                <i class="ti ti-plus"></i> Add / Create
+            </button>
+        </div>
+
+        <!-- My Courses -->
+        <div id="my-courses-container" hx-get="/lecturer/courses" hx-trigger="load" hx-swap="innerHTML">
+            <div th:replace="~{fragments/lecturer-fragments :: course-list}"></div>
+        </div>
+
+        <!-- Create / Assign Panel (hidden by default) -->
+        <div id="course-panel" class="hidden mt-4 border-t border-slate-100 pt-4">
+            <div id="course-panel-error" class="mb-3"></div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+                <!-- Create New Course -->
+                <div class="rounded-lg border border-slate-200 p-4">
+                    <h3 class="text-xs font-semibold text-slate-700 mb-3"><i class="ti ti-circle-plus"></i> Create new course</h3>
+                    <form hx-post="/lecturer/course" hx-target="#course-panel-error" hx-swap="innerHTML" class="space-y-2">
+                        <input type="text" name="courseCode" placeholder="Course code (e.g. CSC302)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-attendiq" required />
+                        <input type="text" name="courseName" placeholder="Course name" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-attendiq" required />
+                        <select name="departmentCode" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-attendiq">
+                            <option th:each="dept : ${departments}" th:value="${dept.code}" th:text="${dept.name}"></option>
+                        </select>
+                        <button type="submit" class="btn-attendiq w-full text-xs py-2">
+                            <i class="ti ti-plus"></i> Create course
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Assign Existing Course -->
+                <div class="rounded-lg border border-slate-200 p-4">
+                    <h3 class="text-xs font-semibold text-slate-700 mb-3"><i class="ti ti-link"></i> Assign existing course</h3>
+                    <form hx-post="/lecturer/course/assign" hx-target="#course-panel-error" hx-swap="innerHTML" class="space-y-2">
+                        <select name="courseId" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-attendiq">
+                            <option th:each="c : ${allCourses}" th:value="${c.id}" th:text="${c.courseCode} + ' — ' + ${c.courseName}"></option>
+                        </select>
+                        <button type="submit" class="btn-attendiq w-full text-xs py-2">
+                            <i class="ti ti-link"></i> Assign to me
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-100 px-3.5 py-2.5 text-xs text-slate-600">
+        <i class="ti ti-info-circle text-attendiq text-sm"></i>
+        <span>QR codes rotate every 5 seconds and are cryptographically tied to this session, your lecturer code, and a server timestamp — preventing screenshot sharing or proxy attendance.</span>
+    </div>
+</main>
+
+<script>
+    function triggerExport(sessionId) {
+        // Download attachment via temporary navigation anchor
+        const link = document.createElement('a');
+        link.href = `/sessions/${sessionId}/attendance/export`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        
+        // Show Toast
+        const toast = document.getElementById('export-toast');
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 2500);
+    }
+
+    function toggleAnalytics() {
+        const outer = document.getElementById('analytics-outer');
+        if (outer.classList.contains('hidden')) {
+            outer.classList.remove('hidden');
+            // Trigger htmx reload
+            htmx.trigger('#analytics-container', 'load');
+        } else {
+            outer.classList.add('hidden');
+        }
+    }
+
+    function toggleCoursePanel() {
+        const panel = document.getElementById('course-panel');
+        panel.classList.toggle('hidden');
+    }
+</script>
+</body>
+</html>

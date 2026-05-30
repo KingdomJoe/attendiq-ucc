@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{layout :: html_head('Student Workspace')}"></head>
+<body class="min-h-screen bg-slate-50">
+
+<!-- Insert App Navigation Bar with custom Student Chip -->
+<div th:replace="~{layout :: app_nav(~{::#nav-chip}, false)}">
+    <span id="nav-chip" class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+        <i class="ti ti-user"></i>
+        <span th:text="${user.displayName}">Student Name</span> · <span th:text="${user.indexNumber != null} ? ${user.indexNumber} : ${user.emailOrCode}">100234</span>
+    </span>
+</div>
+
+<main class="mx-auto max-w-6xl px-5 py-5">
+    <div id="error-alert" class="mb-4"></div>
+
+    <!-- Student Stats metrics grid (Polled every 10s) -->
+    <div id="stats-container" hx-get="/student/stats" hx-trigger="every 10s" hx-swap="outerHTML">
+        <div th:replace="~{fragments/student-fragments :: stats-grid}"></div>
+    </div>
+
+    <div class="grid gap-4 lg:grid-cols-2">
+        
+        <!-- Left Card: Mark Attendance Scanner Flow -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-4 text-sm font-medium">Mark attendance</h2>
+
+            <div id="scanner-card-content">
+                <!-- Idle Phase -->
+                <div id="phase-idle" class="text-center">
+                    <p class="mb-4 text-sm text-slate-500">
+                        Point your camera at the QR code on your lecturer's screen.
+                    </p>
+                    <div class="scanner-box">
+                        <div class="scanner-corner top-0 left-0 border-t-2 border-l-2 rounded-tl-md"></div>
+                        <div class="scanner-corner top-0 right-0 border-t-2 border-r-2 rounded-tr-md"></div>
+                        <div class="scanner-corner bottom-0 left-0 border-b-2 border-l-2 rounded-bl-md"></div>
+                        <div class="scanner-corner bottom-0 right-0 border-b-2 border-r-2 rounded-br-md"></div>
+                        <div class="scan-line"></div>
+                        <i class="ti ti-camera text-4xl text-attendiq/40"></i>
+                    </div>
+                    <button type="button" onclick="startScanner()" class="btn-attendiq mt-4 w-full py-2.5">
+                        <i class="ti ti-scan"></i> Open scanner
+                    </button>
+                </div>
+
+                <!-- Scanning Phase -->
+                <div id="phase-scanning" class="text-center hidden">
+                    <div id="qr-reader-student" class="mx-auto max-w-[280px] overflow-hidden rounded-lg border border-slate-200"></div>
+                    <p class="mt-3 text-xs text-slate-500">Detecting QR code…</p>
+                    <p class="text-[11px] text-slate-400">Validating device &amp; session</p>
+                    <button type="button" onclick="cancelScan()" class="btn-attendiq-outline mt-3 w-full text-xs">
+                        Cancel
+                    </button>
+                </div>
+
+                <!-- Confirm Phase Form (Submitted via HTMX) -->
+                <div id="phase-confirm" class="hidden">
+                    <form id="attendance-scan-form" hx-post="/student/scan" hx-target="#scanner-card-content" hx-swap="innerHTML" class="space-y-4">
+                        <p class="text-sm text-present-text font-medium"><i class="ti ti-circle-check"></i> QR captured. Confirm your index number.</p>
+                        
+                        <!-- Hidden payloads -->
+                        <input type="hidden" name="token" id="hidden-token" />
+                        <input type="hidden" name="deviceFingerprint" id="hidden-fingerprint" />
+
+                        <div>
+                            <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                                Index number
+                            </label>
+                            <input type="text" name="indexNumber" id="input-index-number" th:value="${user.indexNumber}" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-attendiq" required />
+                        </div>
+                        <button type="submit" class="btn-attendiq w-full py-2.5">
+                            Confirm attendance
+                        </button>
+                        <button type="button" onclick="cancelScan()" class="btn-attendiq-outline w-full text-xs">
+                            Cancel
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Card: Attendance Logs History -->
+        <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-4 text-sm font-medium">Attendance history</h2>
+            
+            <div class="max-h-[320px] overflow-y-auto border border-slate-100 rounded-lg p-1">
+                <table class="w-full border-collapse text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-left text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                            <th class="px-2 py-2">Course</th>
+                            <th class="px-2 py-2">Date</th>
+                            <th class="px-2 py-2">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body" hx-get="/student/history" hx-trigger="every 10s" hx-swap="innerHTML">
+                        <tr th:replace="~{fragments/student-fragments :: history-rows}"></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-bar border-amber-200 bg-amber-50 text-amber-800 mt-4">
+                <i class="ti ti-alert-triangle text-amber-600 text-sm mt-0.5"></i>
+                <span>Attendance below 75% may affect your exam eligibility. See your advisor.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Courses Section -->
+    <div class="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-medium"><i class="ti ti-book-2"></i> My Courses</h2>
+            <button type="button" onclick="toggleJoinCourse()" class="btn-attendiq-outline text-xs">
+                <i class="ti ti-plus"></i> Join Course
+            </button>
+        </div>
+
+        <!-- Enrolled Courses -->
+        <div id="student-courses-container" hx-get="/student/courses" hx-trigger="load" hx-swap="innerHTML">
+            <div th:replace="~{fragments/student-fragments :: course-list}"></div>
+        </div>
+
+        <!-- Join Course Panel -->
+        <div id="join-course-panel" class="hidden mt-4 border-t border-slate-100 pt-4">
+            <div id="join-course-error" class="mb-3"></div>
+            <div class="max-w-sm">
+                <h3 class="text-xs font-semibold text-slate-700 mb-3"><i class="ti ti-search"></i> Join by course code</h3>
+                <form hx-post="/student/courses/join" hx-target="#join-course-error" hx-swap="innerHTML" class="flex gap-2">
+                    <input type="text" name="courseCode" placeholder="Enter course code (e.g. CSC302)" class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-attendiq" required />
+                    <button type="submit" class="btn-attendiq text-xs px-4">
+                        <i class="ti ti-plus"></i> Join
+                    </button>
+                </form>
+            </div>
+
+            <!-- Available Courses -->
+            <div th:if="${availableCourses != null and !availableCourses.isEmpty()}" class="mt-3">
+                <p class="text-[11px] text-slate-500 uppercase tracking-wide mb-2">Available courses</p>
+                <div class="flex flex-wrap gap-2">
+                    <form th:each="ac : ${availableCourses}" hx-post="/student/courses/join" hx-target="#join-course-error" hx-swap="innerHTML" class="inline">
+                        <input type="hidden" name="courseCode" th:value="${ac.courseCode}" />
+                        <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 hover:border-attendiq transition-colors">
+                            <i class="ti ti-plus text-attendiq"></i>
+                            <span th:text="${ac.courseCode}">CSC302</span>
+                            <span class="text-slate-400" th:text="' — ' + ${ac.courseName}">— Data Structures</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Load JavaScript dependencies from CDN (pinned versions for stability) -->
+<script src="https://openfpcdn.io/fingerprintjs/v4"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script th:inline="javascript">
+    let fingerprint = "";
+    let scanner = null;
+    const readerId = "qr-reader-student";
+
+    // Detect mobile vs desktop for camera selection heuristics
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // Initialize browser fingerprinting
+    FingerprintJS.load()
+        .then(fp => fp.get())
+        .then(result => {
+            fingerprint = result.visitorId;
+            const fpInput = document.getElementById("hidden-fingerprint");
+            if (fpInput) fpInput.value = fingerprint;
+        });
+
+    function toggleJoinCourse() {
+        const panel = document.getElementById('join-course-panel');
+        panel.classList.toggle('hidden');
+    }
+
+    let scanCancelled = false;
+
+    /**
+     * Safely stops the scanner and releases all camera media tracks.
+     * Returns a Promise that always resolves (never rejects).
+     */
+    function stopScannerSafely() {
+        return new Promise((resolve) => {
+            if (!scanner) {
+                resolve();
+                return;
+            }
+            // Attempt to stop via the library API first
+            const scannerRef = scanner;
+            scanner = null;
+            scannerRef.stop()
+                .then(() => {
+                    killOrphanedTracks();
+                    resolve();
+                })
+                .catch(() => {
+                    killOrphanedTracks();
+                    resolve();
+                });
+        });
+    }
+
+    /**
+     * Failsafe: find and stop any active video tracks from the scanner's
+     * container. This ensures the camera light turns off even if the library's
+     * own stop() fails silently.
+     */
+    function killOrphanedTracks() {
+        try {
+            const container = document.getElementById(readerId);
+            if (container) {
+                const videoEls = container.querySelectorAll('video');
+                videoEls.forEach(video => {
+                    if (video.srcObject) {
+                        video.srcObject.getTracks().forEach(track => track.stop());
+                        video.srcObject = null;
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn("killOrphanedTracks cleanup:", e);
+        }
+    }
+
+    /**
+     * Selects the best camera from the enumerated device list.
+     * On mobile: prefers back/rear/environment cameras for QR scanning.
+     * On desktop: uses the first available camera.
+     */
+    function selectBestCamera(cameras) {
+        if (!cameras || cameras.length === 0) return null;
+        if (cameras.length === 1) return cameras[0];
+
+        if (isMobileDevice) {
+            // Prefer back-facing camera for QR scanning on mobile
+            const backKeywords = ['back', 'rear', 'environment', 'trasera', 'arrière'];
+            const backCam = cameras.find(cam =>
+                backKeywords.some(kw => (cam.label || '').toLowerCase().includes(kw))
+            );
+            if (backCam) return backCam;
+
+            // If labels are empty (permission not yet granted), pick the last camera
+            // (on most mobile devices, the back camera is listed last)
+            const allEmpty = cameras.every(c => !c.label || c.label.trim() === '');
+            if (allEmpty) return cameras[cameras.length - 1];
+        }
+
+        // Desktop or no back camera found: use the first camera
+        return cameras[0];
+    }
+
+    function startScanner() {
+        scanCancelled = false;
+
+        // Clear previous error messages
+        const alertContainer = document.getElementById("error-alert");
+        if (alertContainer) {
+            alertContainer.innerHTML = "";
+        }
+
+        // Check for Secure Context (HTTPS or localhost)
+        // Mobile browsers strictly restrict camera access (getUserMedia) to secure contexts.
+        if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            let title = "Secure Connection (HTTPS) Required";
+            let description = "Camera access was blocked because this site is not using a secure connection (HTTPS). For privacy reasons, browsers restrict camera access to secure origins.";
+
+            if (isMobileDevice) {
+                description += "<br/><br/><strong>Mobile Solution:</strong><br/>" +
+                               "1. The application must be served over an HTTPS domain with a valid SSL certificate.<br/>" +
+                               "2. For local testing, you can use secure tunnel utilities like <code>ngrok</code> or <code>localtunnel</code>.";
+            } else {
+                description += "<br/><br/><strong>Local Testing Solution:</strong> Access this page directly via <code>http://localhost:8080</code> instead of a local network IP address.";
+            }
+
+            showAlert(alertContainer, title, description, 'amber');
+            return;
+        }
+
+        // Check for getUserMedia support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showAlert(alertContainer,
+                "Camera Not Supported",
+                "Your browser does not support camera access. Please use a modern browser such as Chrome, Safari, Firefox, or Edge.",
+                'red');
+            return;
+        }
+
+        // Switch to scanning phase UI
+        document.getElementById("phase-idle").classList.add("hidden");
+        document.getElementById("phase-scanning").classList.remove("hidden");
+
+        // Strategy: enumerate cameras first, then start with a specific deviceId.
+        // This avoids NotReadableError that occurs when using facingMode constraints
+        // on devices where the requested camera type doesn't exist.
+        Html5Qrcode.getCameras()
+            .then(cameras => {
+                if (scanCancelled) throw new Error("CANCELLED");
+
+                if (!cameras || cameras.length === 0) {
+                    throw new Error("NO_CAMERAS");
+                }
+
+                console.log("Available cameras:", cameras.map(c => `${c.id} (${c.label})`));
+
+                const bestCamera = selectBestCamera(cameras);
+                console.log("Selected camera:", bestCamera.id, bestCamera.label);
+
+                scanner = new Html5Qrcode(readerId);
+
+                if (scanCancelled) throw new Error("CANCELLED");
+
+                return scanner.start(
+                    bestCamera.id,
+                    { fps: 10, qrbox: { width: 220, height: 220 } },
+                    (decodedText) => {
+                        // QR scanned successfully
+                        if (scanCancelled) {
+                            console.log("QR decoded but ignored because scanner was cancelled.");
+                            stopScannerSafely();
+                            return;
+                        }
+                        // Stop scanner, then show confirm phase
+                        stopScannerSafely().then(() => {
+                            enterConfirmPhase(decodedText);
+                        });
+                    },
+                    (errorMessage) => {
+                        // Continuous scan-frame errors — silently ignored
+                    }
+                );
+            })
+            .catch(err => {
+                if (err.message === "CANCELLED") {
+                    console.log("Scanner sequence cancelled by user.");
+                    return;
+                }
+
+                console.error("Camera initialization failed:", err);
+
+                let title = "Camera access denied or unavailable";
+                let description = "";
+
+                const errMsg = (err.message || '').toLowerCase();
+                const errName = err.name || '';
+
+                if (err.message === "NO_CAMERAS") {
+                    if (isMobileDevice) {
+                        title = "No camera detected";
+                        description = "<strong>Please check:</strong><br/>" +
+                            "1. You have granted camera permission to this browser.<br/>" +
+                            "2. No other app is currently using your camera.<br/>" +
+                            "3. Try closing and reopening your browser.";
+                    } else {
+                        title = "No webcam detected";
+                        description = "No camera hardware was found on this device. " +
+                            "If you have an external webcam, ensure it is plugged in and not being used by another application.<br/><br/>" +
+                            "<strong>Note:</strong> This app is designed to be used on mobile devices. " +
+                            "Open it on your phone to scan QR codes with your camera.";
+                    }
+                } else if (errName === 'NotReadableError' || errMsg.includes('notreadableerror') || errMsg.includes('could not start video source')) {
+                    description = "<strong>Camera is in use or unavailable.</strong><br/><br/>" +
+                        "<strong>Try these steps:</strong><br/>" +
+                        "1. Close any other app using your camera (Zoom, Teams, Skype, Discord, etc.).<br/>" +
+                        "2. Close other browser tabs that may be using the camera.<br/>" +
+                        "3. Restart your browser and try again.";
+                    if (!isMobileDevice) {
+                        description += "<br/>4. If using a laptop, ensure the webcam privacy shutter is open.";
+                    }
+                } else if (errName === 'NotAllowedError' || errMsg.includes('notallowederror') || errMsg.includes('permission')) {
+                    title = "Camera permission denied";
+                    if (isMobileDevice) {
+                        description = "<strong>To grant camera access:</strong><br/>" +
+                            "1. Tap the lock/info icon in your browser's address bar.<br/>" +
+                            "2. Find 'Camera' and set it to 'Allow'.<br/>" +
+                            "3. Reload this page and try again.";
+                    } else {
+                        description = "Please grant camera permission in your browser's address bar or settings, then reload this page.";
+                    }
+                } else {
+                    description = "An unexpected error occurred while accessing the camera.<br/><br/>" +
+                        "<strong>Error:</strong> " + (err.message || err);
+                }
+
+                showAlert(alertContainer, title, description, 'red');
+                performCancelCleanup();
+            });
+    }
+
+    /**
+     * Displays a styled alert banner in the error container.
+     */
+    function showAlert(container, title, description, color) {
+        const borderColor = color === 'amber' ? 'border-amber-200' : 'border-red-200';
+        const bgColor = color === 'amber' ? 'bg-amber-50' : 'bg-red-50';
+        const textColor = color === 'amber' ? 'text-amber-800' : 'text-red-800';
+        const iconColor = color === 'amber' ? 'text-amber-600' : 'text-red-600';
+        const descColor = color === 'amber' ? 'text-amber-700' : 'text-red-700';
+
+        if (container) {
+            container.innerHTML = `
+                <div class="rounded-xl border ${borderColor} ${bgColor} p-4 text-sm ${textColor} shadow-sm flex flex-col gap-1 transition-all animate-fadeIn">
+                    <div class="flex items-center gap-2 font-medium">
+                        <i class="ti ti-alert-triangle text-base ${iconColor} animate-pulse"></i>
+                        <span>${title}</span>
+                    </div>
+                    <div class="mt-1 text-xs ${descColor} leading-relaxed">${description}</div>
+                </div>
+            `;
+            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            alert(title + "\n\n" + description.replace(/<br\/>/g, "\n").replace(/<[^>]*>/g, ""));
+        }
+    }
+
+    /**
+     * Cancel scanning: stops the camera first, then resets UI.
+     * This order prevents the race condition where the DOM is hidden
+     * before the camera stream is properly released.
+     */
+    function cancelScan() {
+        scanCancelled = true;
+        // Stop the scanner first (while the DOM container still exists)
+        stopScannerSafely().then(() => {
+            resetToIdle();
+        });
+    }
+
+    /**
+     * Internal cleanup used when scanner fails to start — resets UI without
+     * attempting to stop scanner (since it never started successfully).
+     */
+    function performCancelCleanup() {
+        scanCancelled = true;
+        scanner = null;
+        killOrphanedTracks();
+        resetToIdle();
+    }
+
+    function resetToIdle() {
+        const scanningPhase = document.getElementById("phase-scanning");
+        const confirmPhase = document.getElementById("phase-confirm");
+        const idlePhase = document.getElementById("phase-idle");
+
+        // After a successful attendance scan, HTMX replaces scanner-card-content
+        // with the success fragment, removing all phase elements from the DOM.
+        // In that case, we need a full reload to restore the scanner UI.
+        if (!idlePhase) {
+            location.reload();
+            return;
+        }
+
+        if (scanningPhase) scanningPhase.classList.add("hidden");
+        if (confirmPhase) confirmPhase.classList.add("hidden");
+        idlePhase.classList.remove("hidden");
+
+        // Clear the scanner container's innerHTML to remove any leftover video elements
+        const readerEl = document.getElementById(readerId);
+        if (readerEl) readerEl.innerHTML = "";
+    }
+
+    function enterConfirmPhase(token) {
+        document.getElementById("phase-scanning").classList.add("hidden");
+        document.getElementById("phase-confirm").classList.remove("hidden");
+
+        document.getElementById("hidden-token").value = token;
+        document.getElementById("hidden-fingerprint").value = fingerprint;
+    }
+
+    // HTMX listener to automatically refresh stats and logs on success marking
+    document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+        if (evt.detail.target.id === 'scanner-card-content') {
+            // If successfully marked, trigger quick refresh of logs and stats
+            if (document.querySelector(".success-ring")) {
+                htmx.trigger('#history-table-body', 'every 10s');
+                htmx.trigger('#stats-container', 'every 10s');
+            }
+        }
+    });
+</script>
+</body>
+</html>

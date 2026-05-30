@@ -1,0 +1,116 @@
+<div xmlns:th="http://www.thymeleaf.org">
+
+    <!-- 1. Student Stats Grid Fragment -->
+    <div th:fragment="stats-grid" id="stats-container" hx-get="/student/stats" hx-trigger="every 10s" hx-swap="outerHTML" class="grid grid-cols-2 gap-3 mb-5 md:grid-cols-4">
+        <div class="metric-card">
+            <div class="metric-val" th:text="${stats.totalSessions}">0</div>
+            <div class="metric-lbl">Sessions</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-val text-[#3b6d11]" th:text="${stats.attended}">0</div>
+            <div class="metric-lbl">Attended</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-val text-[#a32d2d]" th:text="${stats.missed}">0</div>
+            <div class="metric-lbl">Missed</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-val" th:text="${stats.ratePercent} + '%'">0%</div>
+            <div class="metric-lbl">Rate</div>
+        </div>
+    </div>
+
+
+    <!-- 2. Attendance History Logs Roster -->
+    <tbody th:fragment="history-rows" id="history-table-body">
+        <tr th:if="${history == null or history.isEmpty()}">
+            <td colspan="3" class="py-6 text-center text-slate-400 text-xs">No records yet</td>
+        </tr>
+        <tr th:each="h : ${history}" class="border-b border-slate-100">
+            <td class="px-2 py-2.5 font-medium text-slate-800" th:text="${h.courseCode}">CSC301</td>
+            <td class="px-2 py-2.5 text-slate-500" th:text="${#temporals.format(h.attendanceTime, 'MM-dd', 'UTC')} + ' (' + ${#temporals.format(h.attendanceTime, 'HH:mm', 'UTC')} + ')'">May 29</td>
+            <td class="px-2 py-2.5">
+                <span th:if="${h.status == 'PRESENT'}" class="badge-present">
+                    <i class="ti ti-circle-check"></i> Present
+                </span>
+                <span th:if="${h.status != 'PRESENT'}" class="badge-absent">
+                    <i class="ti ti-x"></i> Absent
+                </span>
+            </td>
+        </tr>
+    </tbody>
+
+
+    <!-- 3. Attendance Scan Success View State -->
+    <div th:fragment="success-container" class="text-center py-2">
+        <div class="success-ring">
+            <i class="ti ti-circle-check text-4xl text-present-text"></i>
+        </div>
+        <p class="text-base font-medium">Attendance marked!</p>
+        <p class="mb-3 text-sm text-slate-500" th:text="${successCourse}">CSC301</p>
+        <div class="mb-4 flex flex-wrap justify-center gap-2">
+            <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs">
+                <i class="ti ti-clock"></i> <span th:text="${markTime}">10:32 AM</span>
+            </span>
+            <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-present-text">
+                <i class="ti ti-shield-check"></i> Verified
+            </span>
+        </div>
+        <button type="button" onclick="resetToIdle()" class="btn-attendiq-outline w-full text-sm">
+            <i class="ti ti-rotate"></i> Scan another
+        </button>
+    </div>
+
+
+    <!-- 4. Confirmation Form showing Scan error message -->
+    <div th:fragment="confirm-form-error">
+        <!-- Error warning alert -->
+        <div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800" th:text="${scanError}">
+            Scan failed. Try again.
+        </div>
+
+        <form id="attendance-scan-form" hx-post="/student/scan" hx-target="#scanner-card-content" hx-swap="innerHTML" class="space-y-4">
+            <p class="text-sm text-slate-500 font-medium">Please re-verify details and confirm.</p>
+            
+            <input type="hidden" name="token" id="hidden-token" th:value="${token}" />
+            <input type="hidden" name="deviceFingerprint" id="hidden-fingerprint" />
+
+            <div>
+                <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                    Index number
+                </label>
+                <input type="text" name="indexNumber" id="input-index-number" th:value="${indexNumber}" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-attendiq" required />
+            </div>
+            <button type="submit" class="btn-attendiq w-full py-2.5">
+                Confirm attendance
+            </button>
+            <button type="button" onclick="cancelScan()" class="btn-attendiq-outline w-full text-xs">
+                Cancel
+            </button>
+        </form>
+        
+        <script>
+            // Ensure fingerprint is populated on error form swap
+            if (typeof fingerprint !== 'undefined') {
+                document.getElementById("hidden-fingerprint").value = fingerprint;
+            }
+        </script>
+    </div>
+
+
+    <!-- 5. Student Course List -->
+    <div th:fragment="course-list" id="student-courses-container">
+        <div th:if="${enrolledCourses == null or enrolledCourses.isEmpty()}" class="text-center py-4 text-xs text-slate-400">
+            No courses enrolled. Click "Join Course" to get started.
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <div th:each="c : ${enrolledCourses}" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                <i class="ti ti-book text-attendiq"></i>
+                <span class="font-medium text-slate-800" th:text="${c.courseCode}">CSC301</span>
+                <span class="text-slate-500" th:text="${c.courseName}">Java Programming</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+

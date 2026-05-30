@@ -1,7 +1,5 @@
 server:
   port: 8080
-  servlet:
-    context-path: /api
 
 spring:
   application:
@@ -28,5 +26,6 @@ app:
     expiry-minutes: 480
   qr:
     ttl-seconds: 5
-  student-email-pattern: ${STUDENT_EMAIL_PATTERN:@ucc\.edu\.gh$}
-  cors-origins: ${APP_CORS_ORIGINS:http://localhost:5173}
+  student-email-pattern: ${STUDENT_EMAIL_PATTERN:.*@.*}
+  cors-origins: ${APP_CORS_ORIGINS:http://localhost:8080}
+
