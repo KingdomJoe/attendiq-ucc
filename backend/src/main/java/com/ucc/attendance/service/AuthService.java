@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -22,6 +24,7 @@ public class AuthService {
     private final LecturerRepository lecturerRepository;
     private final DepartmentRepository departmentRepository;
     private final CourseRepository courseRepository;
+    private final LecturerCodeRepository lecturerCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AppProperties appProperties;
@@ -58,19 +61,38 @@ public class AuthService {
 
     @Transactional
     public AuthDtos.AuthResponse registerLecturer(AuthDtos.LecturerRegisterRequest req) {
+        // Validate the lecturer code against the pre-generated codes table
+        LecturerCode lecturerCode = lecturerCodeRepository.findByCodeIgnoreCase(req.lecturerCode().trim())
+                .orElseThrow(() -> new ApiException("INVALID_CODE",
+                        "Invalid lecturer code. Please use a valid registration code provided by the institution.",
+                        HttpStatus.BAD_REQUEST));
+
+        if (lecturerCode.isClaimed()) {
+            throw new ApiException("CODE_CLAIMED",
+                    "This lecturer code has already been used for registration.",
+                    HttpStatus.CONFLICT);
+        }
+
         if (lecturerRepository.existsByLecturerCodeIgnoreCase(req.lecturerCode())) {
             throw new ApiException("CODE_EXISTS", "Lecturer code already registered", HttpStatus.CONFLICT);
         }
-        Department dept = departmentRepository.findByCodeIgnoreCase(req.departmentCode())
-                .orElseThrow(() -> new ApiException("INVALID_DEPARTMENT", "Department not found", HttpStatus.BAD_REQUEST));
+
+        // Auto-assign department from the lecturer code
+        Department dept = lecturerCode.getDepartment();
 
         Lecturer lecturer = Lecturer.builder()
                 .name(req.name())
-                .lecturerCode(req.lecturerCode().toUpperCase())
+                .lecturerCode(req.lecturerCode().toUpperCase().trim())
                 .passwordHash(passwordEncoder.encode(req.password()))
                 .department(dept)
                 .build();
         lecturer = lecturerRepository.save(lecturer);
+
+        // Mark the code as claimed
+        lecturerCode.setClaimed(true);
+        lecturerCode.setClaimedBy(lecturer);
+        lecturerCode.setClaimedAt(Instant.now());
+        lecturerCodeRepository.save(lecturerCode);
 
         String token = jwtService.generateToken(lecturer.getId(), lecturer.getLecturerCode(), UserRole.LECTURER);
         return new AuthDtos.AuthResponse(token, UserRole.LECTURER, lecturer.getId(), lecturer.getName());
