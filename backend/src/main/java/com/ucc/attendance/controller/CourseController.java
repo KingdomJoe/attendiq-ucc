@@ -26,4 +26,22 @@ public class CourseController {
     public CourseDtos.CourseResponse create(@Valid @RequestBody CourseDtos.CreateCourseRequest request) {
         return courseService.createCourse(request);
     }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LECTURER', 'STUDENT')")
+    public CourseDtos.CourseDetailResponse get(@PathVariable Long id) {
+        return courseService.getCourseDetail(id);
+    }
+
+    @GetMapping("/available")
+    @PreAuthorize("hasRole('STUDENT')")
+    public List<CourseDtos.CourseResponse> listAvailable() {
+        return courseService.listAvailableCourses();
+    }
+
+    @PostMapping("/join")
+    @PreAuthorize("hasRole('STUDENT')")
+    public void join(@RequestParam String courseCode) {
+        courseService.joinCourse(courseCode);
+    }
 }

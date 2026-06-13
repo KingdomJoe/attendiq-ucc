@@ -17,6 +17,7 @@ import java.util.List;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class StatsService {
 
     private final AttendanceSessionRepository sessionRepository;

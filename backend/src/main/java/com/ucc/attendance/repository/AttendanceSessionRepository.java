@@ -9,4 +9,5 @@ import java.util.List;
 public interface AttendanceSessionRepository extends JpaRepository<AttendanceSession, Long> {
     List<AttendanceSession> findByLecturerIdOrderByCreatedAtDesc(Long lecturerId);
     List<AttendanceSession> findByLecturerIdAndStatusOrderByCreatedAtDesc(Long lecturerId, SessionStatus status);
+    List<AttendanceSession> findByCourseIdOrderByCreatedAtDesc(Long courseId);
 }

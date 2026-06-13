@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.ucc.attendance.desktop.controller.CourseController"
+      prefHeight="700"
+      prefWidth="1000"
+      style="-fx-background-color: #0f172a;">
+
+    <!-- Sidebar Navigation -->
+    <VBox styleClass="sidebar" prefWidth="240" spacing="10">
+        <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
+        <Label text="Lecturer Panel" styleClass="text-subtitle" />
+        
+        <Region prefHeight="30" />
+
+        <Button text="🏠 Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
+        <Button text="📚 Courses" styleClass="nav-button, nav-button-active" />
+        <Button text="📈 Analytics" onAction="#handleAnalyticsNav" styleClass="nav-button" />
+        
+        <Region VBox.vgrow="ALWAYS" />
+        
+        <Label fx:id="lecturerLabel" text="Dr. Lecturer" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
+        <Button text="🚪 Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
+    </VBox>
+
+    <!-- Main Content Area -->
+    <HBox HBox.hgrow="ALWAYS" spacing="20" style="-fx-padding: 30;">
+        <!-- Left: Course List Table -->
+        <VBox spacing="20" HBox.hgrow="ALWAYS">
+            <VBox>
+                <Label text="My Assigned Courses" styleClass="text-title" />
+                <Label text="Double click a course to view details, students, and session history." styleClass="text-subtitle" />
+            </VBox>
+
+            <TableView fx:id="coursesTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="codeCol" text="Course Code" prefWidth="120" />
+                    <TableColumn fx:id="nameCol"
+<truncated 1486 bytes>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{layout :: html_head('Lecturer Desktop App')}"></head>
+<body>
+
+<!-- Navigation Bar -->
+<nav th:replace="~{layout :: app_nav(~{::#nav_chip})}">
+    <div id="nav_chip" class="chip">Lecturer Portal</div>
+</nav>
+
+<div class="login-wrapper">
+    <div class="login-card" style="text-align: center;">
+        <div class="login-header">
+            <span class="brand-icon" style="width:3rem;height:3rem;font-size:1.5rem;display:inline-flex;align-items:center;justify-content:center;border-radius:1rem;">A</span>
+            <h1>AttendIQ Desktop</h1>
+            <p>For Lecturers</p>
+        </div>
+
+        <div style="margin: 2rem 0; padding: 1.5rem; background-color: var(--background-secondary); border-radius: 0.5rem; border: 1px solid var(--border-color);">
+            <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Windows Desktop Application</h3>
+            <p style="color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.5rem;">
+                The AttendIQ Lecturer Portal is distributed as a standalone Windows application. It provides real-time QR code generation, offline capabilities, and advanced attendance analytics.
+            </p>
+            <p style="color: var(--text-secondary); line-height: 1.5; margin-bottom: 2rem;">
+                Click below to download the latest <strong>.exe</strong> installer from our GitHub Releases page.
+            </p>
+            
+            <a href="https://github.com/KingdomJoe/attendiq-ucc/releases/latest" target="_blank" class="btn btn-primary" style="display: inline-block; padding: 0.75rem 1.5rem; font-size: 1.1rem; font-weight: 600; text-decoration: none;">
+                Download AttendIQ for Windows
+            </a>
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <a href="/" style="color: var(--primary-color); text-decoration: none;">&larr; Back to Login</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

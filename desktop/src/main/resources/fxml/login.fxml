@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.ucc.attendance.desktop.controller.LoginController"
+      alignment="CENTER"
+      spacing="20"
+      prefHeight="700"
+      prefWidth="1000"
+      style="-fx-background-color: #0f172a;">
+
+    <VBox alignment="CENTER" spacing="10" maxWidth="400" styleClass="card">
+        <Label text="AttendIQ" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
+        <Label text="Lecturer Panel Login" styleClass="text-subtitle" />
+        
+        <Region prefHeight="10" />
+
+        <VBox alignment="CENTER_LEFT" spacing="5">
+            <Label text="Lecturer Code or Email" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;" />
+            <TextField fx:id="usernameField" promptText="e.g. LEC001" prefWidth="300" />
+        </VBox>
+
+        <VBox alignment="CENTER_LEFT" spacing="5">
+            <Label text="Password" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;" />
+            <PasswordField fx:id="passwordField" promptText="*********" prefWidth="300" />
+        </VBox>
+
+        <Region prefHeight="5" />
+
+        <Label fx:id="errorLabel" wrapText="true" style="-fx-text-fill: #ef4444; -fx-font-size: 13px;" visible="false" />
+
+        <Region prefHeight="5" />
+
+        <Button fx:id="loginButton" text="Sign In" onAction="#handleLogin" styleClass="btn, btn-primary" prefWidth="300" />
+    </VBox>
+</VBox>

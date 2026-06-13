@@ -4,279 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title th:text="${title} + ' · AttendIQ'">AttendIQ</title>
-    <meta name="description" content="Fraud-proof attendance tracking powered by dynamic QR codes. Scan, verify, and mark attendance in seconds.">
-
-    <!-- PWA Meta Tags -->
-    <link rel="manifest" href="/manifest.webmanifest">
-    <meta name="theme-color" content="#1d9e75">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="AttendIQ">
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        attendiq: '#1d9e75',
-                        'attendiq-hover': '#0f6e56',
-                        'present-bg': '#eaf3de',
-                        'present-text': '#3b6d11',
-                        'absent-bg': '#fcebeb',
-                        'absent-text': '#a32d2d',
-                        'live-bg': '#e1f5ee',
-                        'live-text': '#0f6e56',
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- HTMX CDN -->
-    <script src="https://unpkg.com/htmx.org@2.0.0"></script>
-    <!-- Tabler Icons Webfont -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
-    <style>
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-            background-color: #f8fafc;
-            color: #0f172a;
-        }
-        .metric-card {
-            border-radius: 0.75rem;
-            background-color: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            padding: 1rem 1.25rem;
-            text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
-            transition: all 0.2s ease-in-out;
-        }
-        .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-        }
-        .metric-val {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #0f172a;
-            line-height: 1.2;
-        }
-        .metric-lbl {
-            margin-top: 0.375rem;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #64748b;
-        }
-        @keyframes slideIn {
-            0% { transform: translateX(120%); opacity: 0; }
-            100% { transform: translateX(0); opacity: 1; }
-        }
-        .animate-slideIn {
-            animation: slideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-        .badge-present {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            border-radius: 9999px;
-            padding: 0.125rem 0.625rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            background: #eaf3de;
-            color: #3b6d11;
-        }
-        .badge-absent {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            border-radius: 9999px;
-            padding: 0.125rem 0.625rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            background: #fcebeb;
-            color: #a32d2d;
-        }
-        .badge-live {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            border-radius: 9999px;
-            padding: 0.125rem 0.625rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            background: #e1f5ee;
-            color: #0f6e56;
-        }
-        .scanner-box {
-            position: relative;
-            margin-left: auto;
-            margin-right: auto;
-            display: flex;
-            height: 220px;
-            width: 220px;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border-radius: 0.75rem;
-            border-width: 2px;
-            border-color: #1d9e75;
-            background-color: #f1f5f9;
-        }
-        .scanner-corner {
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            border-color: #1d9e75;
-        }
-        .scan-line {
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: #1d9e75;
-            opacity: 0.7;
-            animation: scanAnim 1.8s ease-in-out infinite;
-        }
-        @keyframes scanAnim {
-            0% { top: 5%; }
-            100% { top: 95%; }
-        }
-        .row-new {
-            animation: rowIn 0.4s ease;
-        }
-        @keyframes rowIn {
-            from { opacity: 0; background: #eaf3de; }
-            to { opacity: 1; background: transparent; }
-        }
-        .success-ring {
-            margin-left: auto;
-            margin-right: auto;
-            margin-bottom: 1rem;
-            display: flex;
-            height: 72px;
-            width: 72px;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9999px;
-            background: #eaf3de;
-            animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        @keyframes popIn {
-            from { transform: scale(0); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .info-bar {
-            margin-top: 1rem;
-            display: flex;
-            align-items: start;
-            gap: 0.5rem;
-            border-radius: 0.5rem;
-            border-width: 1px;
-            border-color: #e2e8f0;
-            background-color: #f1f5f9;
-            padding: 0.625rem 0.875rem;
-            font-size: 0.75rem;
-            color: #475569;
-        }
-        .btn-attendiq {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.375rem;
-            border-radius: 0.5rem;
-            border-width: 1px;
-            border-color: #1d9e75;
-            background-color: #1d9e75;
-            padding: 0.5rem 0.875rem;
-            font-size: 0.875rem;
-            color: #ffffff;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border-style: solid;
-        }
-        .btn-attendiq:hover {
-            background-color: #0f6e56;
-            border-color: #0f6e56;
-        }
-        .btn-attendiq-outline {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.375rem;
-            border-radius: 0.5rem;
-            border-width: 1px;
-            border-color: #cbd5e1;
-            background-color: #ffffff;
-            padding: 0.5rem 0.875rem;
-            font-size: 0.875rem;
-            color: #1e293b;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border-style: solid;
-        }
-        .btn-attendiq-outline:hover {
-            background-color: #f8fafc;
-        }
-        .live-dot {
-            display: inline-block;
-            height: 0.375rem;
-            width: 0.375rem;
-            border-radius: 9999px;
-            background-color: #1d9e75;
-            animation: blink 1.5s ease infinite;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.25; }
-        }
-    </style>
+    <meta name="description" content="Fraud-proof attendance tracking powered by dynamic QR codes.">
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
 <!-- Navigation Bar Fragment -->
-<nav th:fragment="app_nav(chip, showAuthChip)" class="border-b border-slate-200 bg-white">
-    <div class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
-        <a href="/" class="flex items-center gap-1.5 font-semibold text-slate-900 text-lg">
-            <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-attendiq text-white font-black text-sm">A</span>
+<nav th:fragment="app_nav(chip)" class="navbar">
+    <div class="navbar-inner">
+        <a href="/" class="navbar-brand">
+            <span class="brand-icon">A</span>
             AttendIQ
         </a>
         
-        <div class="flex items-center gap-3">
-            <!-- Auth Chip -->
-            <span th:if="${showAuthChip}" class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
-                <i class="ti ti-shield"></i> Secure · JWT
-            </span>
-
+        <div class="navbar-actions">
             <!-- Custom Context Chip -->
             <div th:replace="${chip != null} ? ${chip} : ~{}"></div>
 
             <!-- Logout Link -->
-            <a th:if="${chip != null}" href="/logout" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50">
-                <i class="ti ti-logout"></i> Logout
+            <a th:if="${chip != null}" href="/logout" class="btn-logout">
+                &#x2192; Logout
             </a>
         </div>
     </div>
 </nav>
-
-<!-- Service Worker Registration -->
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                .then(reg => console.log('[AttendIQ] Service Worker registered, scope:', reg.scope))
-                .catch(err => console.warn('[AttendIQ] Service Worker registration failed:', err));
-        });
-    }
-</script>
 
 </body>
 </html>

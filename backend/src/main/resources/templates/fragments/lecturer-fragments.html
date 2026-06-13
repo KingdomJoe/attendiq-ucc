@@ -1,144 +1,24 @@
-<div xmlns:th="http://www.thymeleaf.org">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
 
-    <!-- 1. Stats Grid Fragment -->
-    <div th:fragment="stats-grid" id="stats-container" th:hx-get="${activeSession != null} ? '/lecturer/session/stats' : null" th:hx-trigger="${activeSession != null} ? 'every 3s' : null" hx-swap="outerHTML" class="grid grid-cols-2 gap-3 mb-5 md:grid-cols-4">
-        <div class="metric-card">
-            <div class="metric-val" th:text="${stats.enrolled}">0</div>
-            <div class="metric-lbl">Enrolled</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-val text-[#3b6d11]" th:text="${stats.present}">0</div>
-            <div class="metric-lbl">Present</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-val text-[#a32d2d]" th:text="${stats.absent}">0</div>
-            <div class="metric-lbl">Absent</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-val" th:text="${stats.ratePercent} + '%'">0%</div>
-            <div class="metric-lbl">Rate</div>
-        </div>
+<!-- Stats Grid Fragment -->
+<div th:fragment="stats-grid" class="stats-grid">
+    <div class="metric-card">
+        <div class="metric-val" th:text="${stats.enrolled}">0</div>
+        <div class="metric-lbl">Enrolled Students</div>
     </div>
-
-
-    <!-- 2. QR Countdown Container -->
-    <div th:fragment="qr-container" id="qr-container-parent" hx-get="/lecturer/session/qr" hx-trigger="every 5s" hx-swap="outerHTML" class="text-center py-2">
-        <div class="relative mx-auto h-[220px] w-[220px]">
-            <svg class="absolute inset-0" width="220" height="220" viewBox="0 0 220 220">
-                <circle cx="110" cy="110" r="104" fill="none" stroke="#e2e8f0" stroke-width="2.5" />
-                <circle id="countdown-circle" cx="110" cy="110" r="104" fill="none" stroke="#1d9e75" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="653.45" stroke-dashoffset="0" style="transform-origin: 110px 110px; transform: rotate(-90deg);" />
-            </svg>
-            <img th:src="'data:image/png;base64,' + ${qr.qrImageBase64}" alt="Session QR code" class="absolute left-[10px] top-[10px] h-[200px] w-[200px] rounded-md" />
-        </div>
-        <p class="mt-2 text-xs text-slate-500">
-            Refreshing in <strong id="seconds-text">5</strong>s
-        </p>
-        <p class="mt-1 font-mono text-[11px] tracking-wide text-slate-400" th:text="${qr.token.length() > 20} ? ${#strings.substring(qr.token, 0, 12)} + '…' : ${qr.token}"></p>
-
-        <script th:inline="javascript">
-            (function() {
-                const CIRC = 2 * Math.PI * 104; // 653.45
-                const targetTime = Date.now() + 5000;
-                const circle = document.getElementById('countdown-circle');
-                const text = document.getElementById('seconds-text');
-
-                function tick() {
-                    const now = Date.now();
-                    const ms = targetTime - now;
-                    const secondsLeft = Math.max(0, Math.ceil(ms / 1000));
-                    text.innerText = secondsLeft;
-                    
-                    const clampedSeconds = Math.min(5, secondsLeft);
-                    const offset = CIRC * (1 - clampedSeconds / 5);
-                    if (circle) circle.style.strokeDashoffset = offset;
-
-                    if (secondsLeft <= 0) {
-                        clearInterval(intervalId);
-                    }
-                }
-
-                tick();
-                const intervalId = setInterval(tick, 250);
-                
-                // Self clean-up when swapped
-                const observer = new MutationObserver((mutations, obs) => {
-                    if (!circle || !circle.isConnected) {
-                        clearInterval(intervalId);
-                        obs.disconnect();
-                    }
-                });
-                observer.observe(document.body, { childList: true, subtree: true });
-            })();
-        </script>
+    <div class="metric-card">
+        <div class="metric-val" style="color: var(--color-present-text)" th:text="${stats.present}">0</div>
+        <div class="metric-lbl">Present (Live/Last)</div>
     </div>
-
-    <!-- Fallback Empty QR container -->
-    <div th:fragment="qr-container-empty" id="qr-container-parent" class="text-center py-10">
-        <p class="text-xs text-slate-400">Unable to load QR token. Refreshing...</p>
+    <div class="metric-card">
+        <div class="metric-val" style="color: var(--color-absent-text)" th:text="${stats.absent}">0</div>
+        <div class="metric-lbl">Absent (Live/Last)</div>
     </div>
-
-
-    <!-- 3. Attendance Roster Rows -->
-    <tbody th:fragment="attendance-rows" id="attendance-table-body">
-        <tr th:if="${attendance == null or attendance.rows.isEmpty()}">
-            <td colspan="4" class="py-6 text-center text-slate-400 text-xs">No students signed in yet</td>
-        </tr>
-        <!-- Row list -->
-        <tr th:each="row : ${attendance?.rows}" 
-            class="border-b border-slate-100 transition-colors"
-            th:classappend="${row.present and row.attendanceTime != null and T(java.time.Instant).now().minusSeconds(8).isBefore(row.attendanceTime)} ? 'row-new bg-green-50' : ''">
-            <td class="px-2 py-2.5 font-medium text-slate-800" th:text="${row.name}">Student Name</td>
-            <td class="px-2 py-2.5 text-slate-500" th:text="${row.indexNumber}">100234</td>
-            <td class="px-2 py-2.5 text-slate-500">
-                <span th:if="${row.attendanceTime != null}" th:text="${#temporals.format(row.attendanceTime, 'HH:mm', 'UTC')}">10:32</span>
-                <span th:if="${row.attendanceTime == null}">—</span>
-            </td>
-            <td class="px-2 py-2.5">
-                <span th:if="${row.present}" class="badge-present">
-                    <i class="ti ti-check"></i> Present
-                </span>
-                <span th:if="${!row.present}" class="badge-absent">
-                    <i class="ti ti-x"></i> Absent
-                </span>
-            </td>
-        </tr>
-        <!-- Dynamic header title updater inside HTMX response -->
-        <div id="attendance-count-summary" hx-swap-oob="innerHTML">
-            <span th:text="${attendance?.presentCount}">0</span> / <span th:text="${attendance?.enrolledCount}">0</span> present
-        </div>
-    </tbody>
-
-
-    <!-- 4. Course Analytics Panel -->
-    <div th:fragment="analytics-list" id="analytics-container" class="space-y-2 max-h-[220px] overflow-y-auto">
-        <div th:if="${analytics == null or analytics.courses.isEmpty()}" class="text-center py-4 text-xs text-slate-400">
-            No analytics available
-        </div>
-        <div th:each="c : ${analytics?.courses}" class="rounded-lg bg-slate-50 border border-slate-100 p-2.5 flex items-center justify-between text-xs">
-            <div>
-                <strong class="text-slate-800" th:text="${c.courseCode}">CSC301</strong>
-                <div class="text-[10px] text-slate-500" th:text="${c.courseName}">Java Programming</div>
-            </div>
-            <div class="text-right">
-                <div class="font-semibold text-slate-800" th:text="${c.averageRatePercent} + '%'">85% avg</div>
-                <div class="text-[9px] text-slate-400" th:text="${c.sessionsHeld} + ' sessions held'">4 sessions</div>
-            </div>
-        </div>
+    <div class="metric-card">
+        <div class="metric-val" th:text="${stats.ratePercent} + '%'">0%</div>
+        <div class="metric-lbl">Attendance Rate</div>
     </div>
-
-
-    <div th:fragment="course-list" id="my-courses-container">
-        <div th:if="${courses == null or courses.isEmpty()}" class="text-center py-4 text-xs text-slate-400">
-            No courses assigned yet. Click "Add / Create" to get started.
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a th:each="c : ${courses}" th:href="'/lecturer/course/' + ${c.id}" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs hover:bg-slate-100 hover:border-attendiq transition-all">
-                <i class="ti ti-book text-attendiq"></i>
-                <span class="font-semibold text-slate-800" th:text="${c.courseCode}">CSC301</span>
-                <span class="text-slate-500" th:text="${c.courseName}">Java Programming</span>
-            </a>
-        </div>
-    </div>
-
 </div>
 
+</html>

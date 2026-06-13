@@ -1,135 +1,89 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{layout :: html_head('Classroom Management')}"></head>
-<body class="min-h-screen bg-slate-50">
+<head th:replace="~{layout :: html_head('Course Details')}"></head>
+<body>
 
-<!-- Navigation Bar -->
-<div th:replace="~{layout :: app_nav(~{::#nav-chip}, false)}">
-    <span id="nav-chip" class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
-        <i class="ti ti-school"></i>
-        <span>Classroom Manager</span>
+<div th:replace="~{layout :: app_nav(~{::#nav-chip})}">
+    <span id="nav-chip" class="chip">
+        &#x1F4FC; Lecturer Portal
     </span>
 </div>
 
-<main class="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-    <!-- Header Block -->
-    <div class="mb-6 flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center">
-        <div>
-            <div class="flex items-center gap-2">
-                <span class="rounded bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800" th:text="${course.department.name}">Computer Science</span>
-            </div>
-            <h1 class="mt-2 text-2xl font-bold text-slate-900" th:text="${course.courseCode} + ' — ' + ${course.courseName}">
-                CSC301 — Java Programming
-            </h1>
-        </div>
-        <div>
-            <a href="/lecturer" class="btn-attendiq-outline py-2 text-xs">
-                <i class="ti ti-arrow-left"></i> Back to Dashboard
-            </a>
-        </div>
+<main class="container page-content">
+    <div class="mb-3">
+        <a href="/lecturer" class="text-sm">&larr; Back to Dashboard</a>
     </div>
 
-    <!-- Course Overview Stats Grid -->
-    <div class="grid grid-cols-3 gap-4 mb-6">
-        <div class="metric-card bg-white border border-slate-200 shadow-sm p-4 sm:p-5">
-            <div class="metric-val text-xl sm:text-2xl" th:text="${roster.size()}">0</div>
-            <div class="metric-lbl text-[10px] sm:text-xs">Students Enrolled</div>
-        </div>
-        <div class="metric-card bg-white border border-slate-200 shadow-sm p-4 sm:p-5">
-            <div class="metric-val text-xl sm:text-2xl" th:text="${totalSessions}">0</div>
-            <div class="metric-lbl text-[10px] sm:text-xs">Sessions Held</div>
-        </div>
-        <div class="metric-card bg-white border border-slate-200 shadow-sm p-4 sm:p-5">
-            <div class="metric-val text-xl sm:text-2xl">
-                <span th:if="${roster.isEmpty()}">0%</span>
-                <span th:if="${!roster.isEmpty()}" th:text="${#numbers.formatDecimal(#aggregates.avg(roster.![attendanceRate]), 1, 0)} + '%'">85%</span>
-            </div>
-            <div class="metric-lbl text-[10px] sm:text-xs">Average Attendance</div>
-        </div>
+    <!-- Course Header -->
+    <div class="card mb-4">
+        <h1 class="card-title" style="font-size:1.125rem;" th:text="${course.courseCode} + ' — ' + ${course.courseName}">CSC301 — Java Programming</h1>
+        <p class="text-xs text-muted" th:text="'Department: ' + ${course.departmentName}">Computer Science</p>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-3">
-        <!-- Roster / Student List (Left 2 Columns) -->
-        <div class="lg:col-span-2 space-y-6">
-            <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-                <div class="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                    <h2 class="text-sm font-semibold text-slate-800"><i class="ti ti-users"></i> Class Roster</h2>
-                    
-                    <!-- Quick Manual Enrollment Form -->
-                    <form th:hx-post="'/lecturer/course/' + ${course.id} + '/add-student'" hx-swap="none" class="flex gap-2">
-                        <input type="text" name="indexNumber" placeholder="Student index to enroll" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs focus:outline-none focus:border-attendiq min-w-[160px]" required />
-                        <button type="submit" class="btn-attendiq text-xs py-1.5 px-3">
-                            <i class="ti ti-plus"></i> Enroll
-                        </button>
-                    </form>
-                </div>
-                
-                <div class="overflow-x-auto border border-slate-100 rounded-lg">
-                    <table class="w-full min-w-[500px] border-collapse text-left text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                <th class="px-4 py-3">Student Name</th>
-                                <th class="px-4 py-3">Index Number</th>
-                                <th class="px-4 py-3 text-center">Attended Sessions</th>
-                                <th class="px-4 py-3 text-center">Course Rate</th>
-                                <th class="px-4 py-3 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:if="${roster.isEmpty()}">
-                                <td colspan="5" class="py-10 text-center text-slate-400">No students enrolled in this classroom</td>
-                            </tr>
-                            <tr th:each="row : ${roster}" class="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
-                                <td class="px-4 py-3.5 font-medium text-slate-800" th:text="${row.name}">Student Name</td>
-                                <td class="px-4 py-3.5 text-slate-600" th:text="${row.indexNumber}">STU100201</td>
-                                <td class="px-4 py-3.5 text-center text-slate-600" th:text="${row.sessionsAttended} + ' / ' + ${totalSessions}">3 / 4</td>
-                                <td class="px-4 py-3.5 text-center">
-                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                                          th:classappend="${row.attendanceRate >= 75} ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'"
-                                          th:text="${row.attendanceRate} + '%'">
-                                        85%
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3.5 text-right">
-                                    <form th:hx-post="'/lecturer/course/' + ${course.id} + '/remove-student'" hx-swap="none" class="inline">
-                                        <input type="hidden" name="studentId" th:value="${row.id}" />
-                                        <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium bg-transparent border-0 cursor-pointer p-0">
-                                            Unenroll
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+    <div class="grid-2">
+        <!-- Sessions Held -->
+        <div class="card">
+            <h2 class="card-title">&#x1F4C5; Sessions History</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Present Count</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="s : ${sessions}">
+                            <td class="text-xs text-muted" th:text="${#temporals.format(s.createdAt, 'dd MMM yyyy, hh:mm a')}">Date</td>
+                            <td th:text="${s.sessionType}">Lecture</td>
+                            <td>
+                                <span th:if="${s.status.name() == 'ACTIVE'}" class="badge badge-live">Live</span>
+                                <span th:if="${s.status.name() == 'CLOSED'}" class="badge badge-absent">Closed</span>
+                            </td>
+                            <td th:text="${s.presentCount} + ' present'">0</td>
+                            <td>
+                                <a th:if="${s.status.name() == 'ACTIVE'}" th:href="@{'/lecturer/session/' + ${s.id}}" class="btn btn-primary btn-sm">View Live QR</a>
+                                <a th:if="${s.status.name() == 'CLOSED'}" th:href="@{'/sessions/' + ${s.id} + '/attendance/export'}" class="btn btn-outline btn-sm">Export</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${sessions.isEmpty()}">
+                            <td colspan="5" class="text-center text-muted text-sm" style="padding:2rem 0;">No sessions held for this course yet</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Session List (Right 1 Column) -->
-        <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-            <h2 class="mb-4 text-sm font-semibold text-slate-800"><i class="ti ti-history"></i> Sessions Log</h2>
-            
-            <div class="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-                <div th:if="${sessions == null or sessions.isEmpty()}" class="text-center py-6 text-xs text-slate-400">
-                    No sessions held yet for this class.
-                </div>
-                <div th:each="s : ${sessions}">
-                    <a th:href="'/lecturer/session/' + ${s.id} + '/summary'" 
-                       class="block rounded-xl border border-slate-100 bg-white p-3 text-xs transition-all hover:bg-slate-50 hover:border-attendiq/40">
-                        <div class="flex items-center justify-between font-semibold mb-1">
-                            <span class="text-slate-800" th:text="${s.sessionType}">LECTURE</span>
-                            <span class="text-slate-400" th:text="${#temporals.format(s.createdAt, 'MMM dd, yyyy', 'UTC')}">May 30</span>
-                        </div>
-                        <div class="mt-2 flex items-center justify-between">
-                            <span class="text-slate-500"> Roster: <span th:text="${s.status.name() == 'ACTIVE' ? 'Live' : 'Closed'}">Closed</span></span>
-                            <span class="text-slate-800 font-semibold" th:if="${s.status.name() == 'ACTIVE'}">Live Scan</span>
-                            <span class="text-slate-800 font-semibold" th:if="${s.status.name() != 'ACTIVE'}">View Summary <i class="ti ti-arrow-right"></i></span>
-                        </div>
-                    </a>
-                </div>
+        <!-- Enrolled Students (Roster) -->
+        <div class="card">
+            <h2 class="card-title">&#x1F465; Enrolled Students (<span th:text="${roster.size()}">0</span>)</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Index Number</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="mate : ${roster}">
+                            <td th:text="${mate.name}">Student Name</td>
+                            <td class="text-muted text-xs" th:text="${mate.indexNumber}">UCC/CS/001</td>
+                            <td class="text-muted text-xs" th:text="${mate.email}">student@ucc.edu.gh</td>
+                        </tr>
+                        <tr th:if="${roster.isEmpty()}">
+                            <td colspan="3" class="text-center text-muted text-sm" style="padding:2rem 0;">No students enrolled in this course yet</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </main>
+
 </body>
 </html>

@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class SessionService {
 
     private final AttendanceSessionRepository sessionRepository;

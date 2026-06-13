@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.ucc.attendance.desktop.controller.SessionController"
+      prefHeight="700"
+      prefWidth="1000"
+      spacing="0"
+      style="-fx-background-color: #0f172a;">
+
+    <!-- Left side: QR Presenter view -->
+    <VBox prefWidth="480" spacing="20" style="-fx-padding: 30; -fx-background-color: #1e293b; -fx-alignment: top-center;">
+        
+        <HBox alignment="CENTER_LEFT" spacing="10" maxWidth="Infinity">
+            <Button text="⬅ Dashboard" onAction="#handleBack" styleClass="btn, btn-secondary" style="-fx-padding: 6 12; -fx-font-size: 13px;" />
+        </HBox>
+
+        <Label fx:id="courseLabel" text="CSC302 - Data Structures" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #f8fafc;" />
+        <Label fx:id="typeLabel" text="ACTIVE LECTURE SESSION" styleClass="status-active" />
+
+        <Region prefHeight="10" />
+
+        <!-- QR Code Container -->
+        <VBox alignment="CENTER" style="-fx-background-color: white; -fx-padding: 15; -fx-background-radius: 12; -fx-max-width: 320; -fx-max-height: 320; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 4);">
+            <ImageView fx:id="qrImageView" fitWidth="280" fitHeight="280" preserveRatio="true" />
+        </VBox>
+
+        <Label text="Scan the QR Code using AttendIQ Web App" style="-fx-font-size: 14px; -fx-text-fill: #94a3b8;" />
+        
+        <!-- Refresh Indicator -->
+        <Label fx:id="refreshLabel" text="Refreshing in 5s..." style="-fx-font-size: 12px; -fx-text-fill: #38bdf8;" />
+
+        <Region prefHeight="10" />
+
+        <!-- Fallback Manual Session Code -->
+        <VBox alignment="CENTER" spacing="5" styleClass="card" style="-fx-backgroun
+<truncated 1921 bytes>

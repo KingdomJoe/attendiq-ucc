@@ -17,12 +17,16 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
+@SuppressWarnings("null")
 public class CourseService {
 
     private final CourseRepository courseRepository;
     private final DepartmentRepository departmentRepository;
     private final LecturerRepository lecturerRepository;
     private final StudentRepository studentRepository;
+    private final AttendanceSessionRepository sessionRepository;
+    private final AttendanceRecordRepository attendanceRecordRepository;
 
     public List<CourseDtos.CourseResponse> listCourses() {
         UserPrincipal user = SecurityUtils.currentUser();
@@ -108,6 +112,48 @@ public class CourseService {
                 c.getDepartment().getCode(),
                 c.getDepartment().getName()
         );
+    }
+
+    public CourseDtos.CourseDetailResponse getCourseDetail(Long courseId) {
+        UserPrincipal user = SecurityUtils.currentUser();
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ApiException("NOT_FOUND", "Course not found", HttpStatus.NOT_FOUND));
+
+        if (user.getRole() == UserRole.LECTURER) {
+            Lecturer l = lecturerRepository.findById(user.getUserId())
+                    .orElseThrow(() -> new ApiException("NOT_FOUND", "Lecturer not found", HttpStatus.NOT_FOUND));
+            if (l.getCourses().stream().noneMatch(c -> c.getId().equals(course.getId()))) {
+                throw new ApiException("FORBIDDEN", "Course not assigned to lecturer", HttpStatus.FORBIDDEN);
+            }
+        } else if (user.getRole() == UserRole.STUDENT) {
+            Student s = studentRepository.findById(user.getUserId())
+                    .orElseThrow(() -> new ApiException("NOT_FOUND", "Student not found", HttpStatus.NOT_FOUND));
+            if (s.getCourses().stream().noneMatch(c -> c.getId().equals(course.getId()))) {
+                throw new ApiException("FORBIDDEN", "You are not enrolled in this course", HttpStatus.FORBIDDEN);
+            }
+        }
+
+        List<Student> students = studentRepository.findByCourseId(courseId);
+        List<CourseDtos.StudentResponse> roster = students.stream()
+                .map(s -> new CourseDtos.StudentResponse(s.getId(), s.getName(), s.getEmail(), s.getIndexNumber()))
+                .sorted((s1, s2) -> s1.name().compareToIgnoreCase(s2.name()))
+                .toList();
+
+        List<AttendanceSession> sessions = sessionRepository.findByCourseIdOrderByCreatedAtDesc(courseId);
+        List<com.ucc.attendance.dto.SessionDtos.SessionResponse> sessionResponses = sessions.stream()
+                .map(s -> new com.ucc.attendance.dto.SessionDtos.SessionResponse(
+                        s.getId(),
+                        s.getCourse().getId(),
+                        s.getCourse().getCourseCode(),
+                        s.getCourse().getCourseName(),
+                        s.getStatus(),
+                        s.getSessionType(),
+                        s.getCreatedAt(),
+                        attendanceRecordRepository.countBySessionId(s.getId())
+                ))
+                .toList();
+
+        return new CourseDtos.CourseDetailResponse(toResponse(course), roster, sessionResponses);
     }
 }
 

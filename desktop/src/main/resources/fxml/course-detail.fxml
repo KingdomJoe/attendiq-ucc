@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.ucc.attendance.desktop.controller.StudentCourseDetailController"
+      prefHeight="700"
+      prefWidth="1000"
+      style="-fx-background-color: #0f172a;">
+
+    <!-- Sidebar Navigation -->
+    <VBox styleClass="sidebar" prefWidth="240" spacing="10">
+        <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
+        <Label text="Student Portal" styleClass="text-subtitle" />
+        
+        <Region prefHeight="30" />
+
+        <Button text="🏠 Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
+        <Button text="📋 Attendance History" onAction="#handleHistoryNav" styleClass="nav-button" />
+        
+        <Region VBox.vgrow="ALWAYS" />
+        
+        <Label fx:id="studentNameLabel" text="Student Name" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
+        <Label fx:id="studentIndexLabel" text="UCC/CS/001" styleClass="text-subtitle" style="-fx-font-size: 11px;" />
+        <Button text="🚪 Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
+    </VBox>
+
+    <!-- Main Content Area -->
+    <ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS" style="-fx-background: #0f172a; -fx-background-color: transparent;">
+        <VBox spacing="20" style="-fx-padding: 30;">
+            <!-- Header & Back Nav -->
+            <VBox spacing="10">
+                <Button text="← Back to Dashboard" onAction="#handleDashboardNav" styleClass="btn, btn-secondary" />
+                <Label fx:id="courseHeaderLabel" text="CSC302 — Data Structures" styleClass="text-title" />
+                <Label fx:id="departmentLabel" text="Department: Computer Science" styleClass="tex
+<truncated 3681 bytes>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.ucc.attendance.desktop.controller.SessionSummaryController"
+      prefHeight="700"
+      prefWidth="1000"
+      style="-fx-background-color: #0f172a;">
+
+    <!-- Sidebar (Non-interactive static view, highlighted Dashboard) -->
+    <VBox styleClass="sidebar" prefWidth="240" spacing="10">
+        <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
+        <Label text="Lecturer Panel" styleClass="text-subtitle" />
+        
+        <Region prefHeight="30" />
+
+        <Button text="🏠 Dashboard" onAction="#handleBack" styleClass="nav-button" />
+        <Button text="📚 Courses" onAction="#handleCoursesNav" styleClass="nav-button" />
+        <Button text="📈 Analytics" onAction="#handleAnalyticsNav" styleClass="nav-button" />
+        
+        <Region VBox.vgrow="ALWAYS" />
+        
+        <Label fx:id="lecturerLabel" text="Dr. Lecturer" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
+        <Button text="🚪 Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
+    </VBox>
+
+    <!-- Main Content Area -->
+    <VBox HBox.hgrow="ALWAYS" spacing="20" style="-fx-padding: 30;">
+        <!-- Header -->
+        <HBox alignment="CENTER_LEFT">
+            <VBox>
+                <Label text="Session Summary" styleClass="text-title" />
+                <Label fx:id="sessionMetaLabel" text="Course Name | Date" styleClass="text-subtitle" />
+            </VBox>
+            <Region HBox.hgrow="ALWAYS" />
+            <HBox spacing="10">
+                <Button text="📊 Export CSV" onAction="#handleExportCsv" styleClass="btn, btn-primary" />
+                <Button text="🏠 Back" onActi
+<truncated 2197 bytes>

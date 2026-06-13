@@ -1,9 +1,11 @@
-# Java
+# Java - Build outputs
 backend/target/
+desktop/target/
 backend/.mvn/wrapper/maven-wrapper.jar
 *.class
-*.jar
-*.war
+
+# Note: *.jar excluded globally to avoid committing compiled fat-jars
+# GitHub Actions workflow handles building & publishing the desktop JAR as a release asset
 
 # Node
 frontend/node_modules/

@@ -30,10 +30,8 @@ public class JwtService {
         Instant exp = now.plusSeconds(expiryMinutes * 60);
         return Jwts.builder()
                 .subject(subject)
-                .claims(Map.of(
-                        "userId", userId,
-                        "role", role.name()
-                ))
+                .claim("userId", userId)
+                .claim("role", role.name())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
                 .signWith(key)

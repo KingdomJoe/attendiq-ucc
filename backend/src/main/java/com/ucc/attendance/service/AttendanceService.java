@@ -19,6 +19,7 @@ import java.util.List;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class AttendanceService {
 
     private final SessionService sessionService;

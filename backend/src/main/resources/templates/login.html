@@ -1,252 +1,109 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{layout :: html_head('Authentication')}"></head>
-<body class="min-h-screen bg-slate-50">
+<head th:replace="~{layout :: html_head('Login')}"></head>
+<body>
 
-<!-- Insert App Navigation Bar -->
-<div th:replace="~{layout :: app_nav(null, true)}"></div>
-
-<div class="mx-auto max-w-md px-5 py-9">
-    <div class="mb-6">
-        <h1 class="text-xl font-medium text-slate-900">Sign in to AttendIQ</h1>
-        <p class="mt-1 text-sm text-slate-500">Fraud-proof attendance powered by dynamic QR</p>
-    </div>
-
-    <!-- Error Alert Container -->
-    <div id="error-alert" class="mb-4"></div>
-
-    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        
-        <!-- User Type Tabs -->
-        <div class="mb-4">
-            <label class="mb-2 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                I am a
-            </label>
-            <div class="flex rounded-lg bg-slate-100 p-1">
-                <button type="button" id="tab-student" onclick="setUserType('STUDENT')" class="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-white text-slate-800 shadow-sm">
-                    <i class="ti ti-user"></i> Student
-                </button>
-                <button type="button" id="tab-lecturer" onclick="setUserType('LECTURER')" class="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-600 hover:text-slate-900">
-                    <i class="ti ti-presentation"></i> Lecturer
-                </button>
-            </div>
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-header">
+            <span class="brand-icon" style="width:2.5rem;height:2.5rem;font-size:1.25rem;display:inline-flex;align-items:center;justify-content:center;border-radius:0.75rem;">A</span>
+            <h1>AttendIQ</h1>
+            <p>Smart Attendance System</p>
         </div>
 
-        <!-- Mode Tabs -->
-        <div class="mb-4">
-            <div class="flex rounded-lg bg-slate-100 p-1">
-                <button type="button" id="tab-login" onclick="setMode('login')" class="flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-white text-slate-800 shadow-sm">
-                    Login
-                </button>
-                <button type="button" id="tab-register" onclick="setMode('register')" class="flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-600 hover:text-slate-900">
-                    Register
-                </button>
-            </div>
+        <!-- Error message -->
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <!-- Success message -->
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <a href="/?tab=login" class="tab" th:classappend="${tab == null || tab == 'login'} ? 'active' : ''">Login</a>
+            <a href="/?tab=register-student" class="tab" th:classappend="${tab == 'register-student'} ? 'active' : ''">Student Register</a>
+            <a href="/?tab=register-lecturer" class="tab" th:classappend="${tab == 'register-lecturer'} ? 'active' : ''">Lecturer Register</a>
         </div>
 
-        <!-- Main Form -->
-        <form id="auth-form" hx-post="/login" hx-target="#error-alert" hx-swap="innerHTML" class="space-y-3">
-            <input type="hidden" name="role" id="form-role" value="STUDENT" />
-
-            <!-- Register Only: Full Name -->
-            <div id="field-name" class="hidden">
-                <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                    Full name
-                </label>
-                <input type="text" name="name" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-attendiq" placeholder="Enter full name" />
-            </div>
-
-            <!-- Role Dependent: Email (Student) -->
-            <div id="field-email">
-                <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                    Institutional email
-                </label>
-                <input type="email" name="email" id="input-email" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-attendiq" placeholder="student@ucc.edu.gh" />
-            </div>
-
-            <!-- Role Dependent: Lecturer Code or Student Index -->
-            <div id="field-index-code" class="hidden">
-                <label id="lbl-index-code" class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                    Index number
-                </label>
-                <input type="text" name="indexNumber" id="input-index-code" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-attendiq" placeholder="E.g. 100230" />
-            </div>
-
-            <!-- Register Only: Department Dropdown -->
-            <div id="field-dept" class="hidden">
-                <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                    Department
-                </label>
-                <select name="departmentCode" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-attendiq">
-                    <option th:each="dept : ${departments}" th:value="${dept.code}" th:text="${dept.name}"></option>
+        <!-- ═══ LOGIN FORM ═══ -->
+        <form th:if="${tab == null || tab == 'login'}" action="/login" method="post">
+            <div class="form-group">
+                <label class="form-label">Role</label>
+                <select name="role" class="form-select" required>
+                    <option value="STUDENT">Student</option>
+                    <option value="LECTURER">Lecturer</option>
                 </select>
             </div>
-
-            <!-- Password -->
-            <div>
-                <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                    Password
-                </label>
-                <input type="password" name="password" id="input-password" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:border-attendiq" placeholder="••••••••" required />
+            <div class="form-group">
+                <label class="form-label">Email / Lecturer Code</label>
+                <input type="text" name="identifier" class="form-input" placeholder="Enter email or lecturer code" required>
             </div>
-
-            <!-- Submit Button -->
-            <button type="submit" class="btn-attendiq w-full py-2.5">
-                Continue <i class="ti ti-arrow-right"></i>
-            </button>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-input" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
         </form>
-    </div>
 
-    <!-- Demo Accounts Shortcuts -->
-    <div class="mt-3 flex gap-2">
-        <button type="button" onclick="loginDemo('STUDENT')" class="btn-attendiq-outline flex-1 text-xs">
-            <i class="ti ti-bolt text-yellow-500"></i> Demo Student
-        </button>
-        <button type="button" onclick="loginDemo('LECTURER')" class="btn-attendiq-outline flex-1 text-xs">
-            <i class="ti ti-bolt text-yellow-500"></i> Demo Lecturer
-        </button>
+        <!-- ═══ STUDENT REGISTER FORM ═══ -->
+        <form th:if="${tab == 'register-student'}" action="/register/student" method="post">
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" name="name" class="form-input" placeholder="Enter your full name" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-input" placeholder="your.email@ucc.edu.gh" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Index Number</label>
+                <input type="text" name="indexNumber" class="form-input" placeholder="e.g. UCC/CS/0001/2023" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <select name="departmentCode" class="form-select" required>
+                    <option value="">Select department</option>
+                    <option th:each="dept : ${departments}" th:value="${dept.code}" th:text="${dept.name}">Department</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-input" placeholder="Create a password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Register</button>
+        </form>
+
+        <!-- ═══ LECTURER REGISTER FORM ═══ -->
+        <form th:if="${tab == 'register-lecturer'}" action="/register/lecturer" method="post">
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" name="name" class="form-input" placeholder="Enter your full name" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Lecturer Code</label>
+                <input type="text" name="lecturerCode" class="form-input" placeholder="Provided by institution" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Department</label>
+                <select name="departmentCode" class="form-select" required>
+                    <option value="">Select department</option>
+                    <option th:each="dept : ${departments}" th:value="${dept.code}" th:text="${dept.name}">Department</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-input" placeholder="Create a password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Register</button>
+        </form>
+
+        <!-- Lecturer Download Link -->
+        <div style="margin-top: 2rem; text-align: center; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <p style="color: var(--text-secondary); margin-bottom: 0.75rem; font-size: 0.9rem;">Lecturers manage sessions via the Windows Desktop App.</p>
+            <a href="/lecturer-download" class="btn btn-secondary" style="display: inline-block; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 0.375rem; text-decoration: none; color: var(--text-primary);">
+                ⬇ Download Desktop App
+            </a>
+        </div>
     </div>
-    <p class="mt-3 text-center text-[11px] text-slate-500">
-        Use demo buttons to explore without signing in
-    </p>
 </div>
 
-<!-- Page Toggling Script -->
-<script>
-    let userType = 'STUDENT';
-    let mode = 'login';
-
-    const tabStudent = document.getElementById('tab-student');
-    const tabLecturer = document.getElementById('tab-lecturer');
-    const tabLogin = document.getElementById('tab-login');
-    const tabRegister = document.getElementById('tab-register');
-
-    const form = document.getElementById('auth-form');
-    const formRole = document.getElementById('form-role');
-    const fieldName = document.getElementById('field-name');
-    const fieldEmail = document.getElementById('field-email');
-    const fieldIndexCode = document.getElementById('field-index-code');
-    const fieldDept = document.getElementById('field-dept');
-
-    const lblIndexCode = document.getElementById('lbl-index-code');
-    const inputIndexCode = document.getElementById('input-index-code');
-    const inputEmail = document.getElementById('input-email');
-    const inputPassword = document.getElementById('input-password');
-
-    function updateUI() {
-        // Clear errors
-        document.getElementById('error-alert').innerHTML = '';
-
-        // Role tab states
-        if (userType === 'STUDENT') {
-            tabStudent.className = 'flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-white text-slate-800 shadow-sm';
-            tabLecturer.className = 'flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-600 hover:text-slate-900';
-            formRole.value = 'STUDENT';
-        } else {
-            tabLecturer.className = 'flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-white text-slate-800 shadow-sm';
-            tabStudent.className = 'flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-600 hover:text-slate-900';
-            formRole.value = 'LECTURER';
-        }
-
-        // Mode tab states
-        if (mode === 'login') {
-            tabLogin.className = 'flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-white text-slate-800 shadow-sm';
-            tabRegister.className = 'flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-600 hover:text-slate-900';
-            
-            // Show/Hide fields for Login
-            fieldName.classList.add('hidden');
-            fieldDept.classList.add('hidden');
-            inputPassword.removeAttribute('minLength');
-            
-            if (userType === 'STUDENT') {
-                fieldEmail.classList.remove('hidden');
-                inputEmail.setAttribute('name', 'identifier');
-                inputEmail.required = true;
-
-                fieldIndexCode.classList.add('hidden');
-                inputIndexCode.required = false;
-            } else { // Lecturer Login
-                fieldEmail.classList.add('hidden');
-                inputEmail.required = false;
-
-                fieldIndexCode.classList.remove('hidden');
-                lblIndexCode.innerText = 'Lecturer code';
-                inputIndexCode.setAttribute('name', 'identifier');
-                inputIndexCode.placeholder = 'E.g. LEC001';
-                inputIndexCode.required = true;
-            }
-
-            form.setAttribute('hx-post', '/login');
-        } else { // Register Mode
-            tabRegister.className = 'flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all bg-white text-slate-800 shadow-sm';
-            tabLogin.className = 'flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-slate-600 hover:text-slate-900';
-            
-            fieldName.classList.remove('hidden');
-            fieldDept.classList.remove('hidden');
-            inputPassword.setAttribute('minLength', '8');
-
-            if (userType === 'STUDENT') {
-                fieldEmail.classList.remove('hidden');
-                inputEmail.setAttribute('name', 'email');
-                inputEmail.required = true;
-
-                fieldIndexCode.classList.remove('hidden');
-                lblIndexCode.innerText = 'Index number';
-                inputIndexCode.setAttribute('name', 'indexNumber');
-                inputIndexCode.placeholder = 'E.g. 100230';
-                inputIndexCode.required = true;
-
-                form.setAttribute('hx-post', '/register/student');
-            } else { // Lecturer Register
-                fieldEmail.classList.add('hidden');
-                inputEmail.required = false;
-
-                fieldIndexCode.classList.remove('hidden');
-                lblIndexCode.innerText = 'Lecturer code';
-                inputIndexCode.setAttribute('name', 'lecturerCode');
-                inputIndexCode.placeholder = 'E.g. LEC001';
-                inputIndexCode.required = true;
-
-                form.setAttribute('hx-post', '/register/lecturer');
-            }
-        }
-
-        // Reprocess form dynamically so HTMX binds the newly set hx-post url
-        htmx.process(form);
-    }
-
-    function setUserType(type) {
-        userType = type;
-        updateUI();
-    }
-
-    function setMode(m) {
-        mode = m;
-        updateUI();
-    }
-
-    function loginDemo(role) {
-        if (role === 'STUDENT') {
-            setUserType('STUDENT');
-            setMode('login');
-            // Populate fields
-            inputEmail.value = 'student@ucc.edu.gh';
-            inputPassword.value = 'student123';
-        } else {
-            setUserType('LECTURER');
-            setMode('login');
-            // Wait brief moment for inputs to swap
-            setTimeout(() => {
-                const inputIndexCode = document.getElementById('input-index-code');
-                if (inputIndexCode) inputIndexCode.value = 'LEC001';
-                inputPassword.value = 'lecturer123';
-                // Trigger form submission
-                form.requestSubmit();
-            }, 50);
-            return;
-        }
-        form.requestSubmit();
-    }
-</script>
 </body>
 </html>

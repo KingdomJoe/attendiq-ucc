@@ -12,20 +12,30 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.google.zxing.*;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class WebController {
 
     private final AuthService authService;
@@ -33,16 +43,13 @@ public class WebController {
     private final StatsService statsService;
     private final AttendanceService attendanceService;
     private final CourseService courseService;
-    private final CourseRepository courseRepository;
     private final DepartmentRepository departmentRepository;
-    private final AttendanceSessionRepository sessionRepository;
-    private final StudentRepository studentRepository;
-    private final LecturerRepository lecturerRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
 
+    // ── Index / Login Page ──────────────────────────────────────────
 
     @GetMapping("/")
-    public String index(Model model) {
+    public String index(@RequestParam(required = false) String tab, Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof UserPrincipal principal) {
             if (principal.getRole() == UserRole.STUDENT) {
@@ -52,74 +59,87 @@ public class WebController {
             }
         }
         model.addAttribute("departments", departmentRepository.findAll());
+        model.addAttribute("tab", tab);
         return "login";
     }
 
+    @GetMapping("/login")
+    public String loginPage() {
+        return "redirect:/?tab=login";
+    }
+
     @PostMapping("/login")
-    @ResponseBody
-    public ResponseEntity<String> login(
+    public String login(
             @RequestParam String identifier,
             @RequestParam String password,
             @RequestParam UserRole role,
-            HttpServletResponse response) {
+            HttpServletResponse response,
+            RedirectAttributes redirectAttributes) {
         try {
             AuthDtos.AuthResponse authRes = authService.login(new AuthDtos.LoginRequest(identifier, password, role));
             setTokenCookie(response, authRes.token());
-            String redirectUrl = role == UserRole.STUDENT ? "/student" : "/lecturer";
-            return ResponseEntity.ok()
-                    .header("HX-Redirect", redirectUrl)
-                    .body("");
+            if (role == UserRole.STUDENT) {
+                return "redirect:/student";
+            }
+            return "redirect:/lecturer";
         } catch (Exception e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : "Invalid credentials";
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("<div class=\"rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800\">" + errorMsg + "</div>");
+            redirectAttributes.addFlashAttribute("error", errorMsg);
+            return "redirect:/?tab=login";
         }
     }
 
+    @GetMapping("/register/student")
+    public String registerStudentPage() {
+        return "redirect:/?tab=register-student";
+    }
+
     @PostMapping("/register/student")
-    @ResponseBody
-    public ResponseEntity<String> registerStudent(
+    public String registerStudent(
             @RequestParam String name,
             @RequestParam String email,
             @RequestParam String indexNumber,
             @RequestParam String departmentCode,
             @RequestParam String password,
-            HttpServletResponse response) {
+            HttpServletResponse response,
+            RedirectAttributes redirectAttributes) {
         try {
             AuthDtos.AuthResponse authRes = authService.registerStudent(
                     new AuthDtos.StudentRegisterRequest(name, email, indexNumber, departmentCode, password)
             );
             setTokenCookie(response, authRes.token());
-            return ResponseEntity.ok()
-                    .header("HX-Redirect", "/student")
-                    .body("");
+            return "redirect:/student";
         } catch (Exception e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : "Registration failed";
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("<div class=\"rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800\">" + errorMsg + "</div>");
+            redirectAttributes.addFlashAttribute("error", errorMsg);
+            return "redirect:/?tab=register-student";
         }
     }
 
+    @GetMapping("/register/lecturer")
+    public String registerLecturerPage() {
+        return "redirect:/?tab=register-lecturer";
+    }
+
     @PostMapping("/register/lecturer")
-    @ResponseBody
-    public ResponseEntity<String> registerLecturer(
+    public String registerLecturer(
             @RequestParam String name,
             @RequestParam String lecturerCode,
             @RequestParam String departmentCode,
             @RequestParam String password,
-            HttpServletResponse response) {
+            HttpServletResponse response,
+            RedirectAttributes redirectAttributes) {
         try {
             AuthDtos.AuthResponse authRes = authService.registerLecturer(
                     new AuthDtos.LecturerRegisterRequest(name, lecturerCode, departmentCode, password)
             );
             setTokenCookie(response, authRes.token());
-            return ResponseEntity.ok()
-                    .header("HX-Redirect", "/lecturer")
-                    .body("");
+            redirectAttributes.addFlashAttribute("success", "Lecturer registered successfully. You can manage sessions via this web portal or the Windows desktop app.");
+            return "redirect:/lecturer";
         } catch (Exception e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : "Registration failed";
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("<div class=\"rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800\">" + errorMsg + "</div>");
+            redirectAttributes.addFlashAttribute("error", errorMsg);
+            return "redirect:/?tab=register-lecturer";
         }
     }
 
@@ -130,255 +150,230 @@ public class WebController {
         return "redirect:/";
     }
 
-    @GetMapping("/lecturer")
-    @PreAuthorize("hasRole('LECTURER')")
-    public String lecturerWorkspace(Model model) {
-        UserPrincipal lecturer = SecurityUtils.requireRole(UserRole.LECTURER);
-        AuthDtos.MeResponse me = authService.me();
-        
-        List<AttendanceSession> activeSessions = sessionRepository.findByLecturerIdAndStatusOrderByCreatedAtDesc(
-                lecturer.getUserId(), SessionStatus.ACTIVE
-        );
-        AttendanceSession activeSession = activeSessions.isEmpty() ? null : activeSessions.get(0);
-
-        model.addAttribute("user", me);
-        model.addAttribute("courses", courseRepository.findByLecturerId(lecturer.getUserId()));
-        model.addAttribute("allCourses", courseRepository.findAllOrdered());
-        model.addAttribute("departments", departmentRepository.findAll());
-        model.addAttribute("activeSession", activeSession);
-
-        if (activeSession != null) {
-            model.addAttribute("stats", statsService.lecturerStats(activeSession.getId()));
-            model.addAttribute("attendance", sessionService.getAttendance(activeSession.getId()));
-            try {
-                model.addAttribute("qr", sessionService.issueQr(activeSession.getId()));
-            } catch (Exception ignored) {}
-        } else {
-            model.addAttribute("stats", statsService.lecturerStats(null));
-        }
-
-        return "lecturer";
+    @GetMapping("/lecturer-download")
+    public String lecturerDownload() {
+        return "lecturer-download";
     }
 
-    @PostMapping("/lecturer/session")
-    @PreAuthorize("hasRole('LECTURER')")
-    @ResponseBody
-    public ResponseEntity<String> startSession(
-            @RequestParam Long courseId,
-            @RequestParam SessionType sessionType) {
-        try {
-            sessionService.createSession(new SessionDtos.CreateSessionRequest(courseId, sessionType));
-            return ResponseEntity.ok()
-                    .header("HX-Redirect", "/lecturer")
-                    .body("");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("<div class=\"rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800\">" + e.getMessage() + "</div>");
-        }
-    }
-
-    @PostMapping("/lecturer/session/{id}/close")
-    @PreAuthorize("hasRole('LECTURER')")
-    @ResponseBody
-    public ResponseEntity<String> closeSession(@PathVariable Long id) {
-        try {
-            sessionService.closeSession(id);
-            return ResponseEntity.ok()
-                    .header("HX-Redirect", "/lecturer/session/" + id + "/summary")
-                    .body("");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("<div class=\"rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800\">" + e.getMessage() + "</div>");
-        }
-    }
-
-    @GetMapping("/lecturer/session/qr")
-    @PreAuthorize("hasRole('LECTURER')")
-    public String getSessionQr(Model model) {
-        UserPrincipal lecturer = SecurityUtils.requireRole(UserRole.LECTURER);
-        List<AttendanceSession> activeSessions = sessionRepository.findByLecturerIdAndStatusOrderByCreatedAtDesc(
-                lecturer.getUserId(), SessionStatus.ACTIVE
-        );
-        if (activeSessions.isEmpty()) {
-            return "fragments/lecturer-fragments :: qr-container-empty";
-        }
-        AttendanceSession activeSession = activeSessions.get(0);
-        try {
-            SessionDtos.QrResponse qr = sessionService.issueQr(activeSession.getId());
-            model.addAttribute("qr", qr);
-            return "fragments/lecturer-fragments :: qr-container";
-        } catch (Exception e) {
-            return "fragments/lecturer-fragments :: qr-container-empty";
-        }
-    }
-
-    @GetMapping("/lecturer/session/attendance")
-    @PreAuthorize("hasRole('LECTURER')")
-    public String getSessionAttendance(Model model) {
-        UserPrincipal lecturer = SecurityUtils.requireRole(UserRole.LECTURER);
-        List<AttendanceSession> activeSessions = sessionRepository.findByLecturerIdAndStatusOrderByCreatedAtDesc(
-                lecturer.getUserId(), SessionStatus.ACTIVE
-        );
-        if (activeSessions.isEmpty()) {
-            model.addAttribute("attendance", new SessionDtos.SessionAttendanceResponse(null, null, List.of(), 0, 0));
-        } else {
-            model.addAttribute("attendance", sessionService.getAttendance(activeSessions.get(0).getId()));
-        }
-        return "fragments/lecturer-fragments :: attendance-rows";
-    }
-
-    @GetMapping("/lecturer/session/stats")
-    @PreAuthorize("hasRole('LECTURER')")
-    public String getLecturerStats(Model model) {
-        UserPrincipal lecturer = SecurityUtils.requireRole(UserRole.LECTURER);
-        List<AttendanceSession> activeSessions = sessionRepository.findByLecturerIdAndStatusOrderByCreatedAtDesc(
-                lecturer.getUserId(), SessionStatus.ACTIVE
-        );
-        AttendanceSession activeSession = activeSessions.isEmpty() ? null : activeSessions.get(0);
-        if (activeSession != null) {
-            model.addAttribute("stats", statsService.lecturerStats(activeSession.getId()));
-        } else {
-            model.addAttribute("stats", new StatsDtos.LecturerStats(0, 0, 0, 0, null, null));
-        }
-        return "fragments/lecturer-fragments :: stats-grid";
-    }
-
-    @GetMapping("/lecturer/analytics")
-    @PreAuthorize("hasRole('LECTURER')")
-    public String getLecturerAnalytics(Model model) {
-        StatsDtos.LecturerAnalyticsResponse analytics = statsService.lecturerAnalytics();
-        model.addAttribute("analytics", analytics);
-        return "fragments/lecturer-fragments :: analytics-list";
-    }
-
-    // ── Lecturer Course Management ──────────────────────────────────────
-
-    @GetMapping("/lecturer/courses")
-    @PreAuthorize("hasRole('LECTURER')")
-    public String getLecturerCourses(Model model) {
-        UserPrincipal lecturer = SecurityUtils.requireRole(UserRole.LECTURER);
-        model.addAttribute("courses", courseRepository.findByLecturerId(lecturer.getUserId()));
-        model.addAttribute("allCourses", courseRepository.findAllOrdered());
-        return "fragments/lecturer-fragments :: course-list";
-    }
-
-    @PostMapping("/lecturer/course")
-    @PreAuthorize("hasRole('LECTURER')")
-    @ResponseBody
-    public ResponseEntity<String> createCourse(
-            @RequestParam String courseCode,
-            @RequestParam String courseName,
-            @RequestParam String departmentCode) {
-        try {
-            courseService.createCourse(new CourseDtos.CreateCourseRequest(courseCode, courseName, departmentCode));
-            return ResponseEntity.ok()
-                    .header("HX-Redirect", "/lecturer")
-                    .body("");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("<div class=\"rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800\">" + e.getMessage() + "</div>");
-        }
-    }
-
-    @PostMapping("/lecturer/course/assign")
-    @PreAuthorize("hasRole('LECTURER')")
-    @ResponseBody
-    public ResponseEntity<String> assignCourse(@RequestParam Long courseId) {
-        try {
-            courseService.assignCourseToLecturer(courseId);
-            return ResponseEntity.ok()
-                    .header("HX-Redirect", "/lecturer")
-                    .body("");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("<div class=\"rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800\">" + e.getMessage() + "</div>");
-        }
-    }
+    // ── Student Workspace ───────────────────────────────────────────
 
     @GetMapping("/student")
-    @PreAuthorize("hasRole('STUDENT')")
     public String studentWorkspace(Model model) {
-        UserPrincipal student = SecurityUtils.requireRole(UserRole.STUDENT);
+        SecurityUtils.requireRole(UserRole.STUDENT);
         AuthDtos.MeResponse me = authService.me();
         model.addAttribute("user", me);
         model.addAttribute("stats", statsService.studentStats());
         model.addAttribute("history", attendanceService.history());
-        model.addAttribute("enrolledCourses", courseRepository.findByStudentId(student.getUserId()));
+        model.addAttribute("enrolledCourses", courseService.listCourses());
         model.addAttribute("availableCourses", courseService.listAvailableCourses());
         return "student";
     }
 
-    @PostMapping("/student/scan")
-    @PreAuthorize("hasRole('STUDENT')")
-    public String confirmAttendance(
-            @RequestParam String token,
-            @RequestParam String deviceFingerprint,
+    // ── QR Image Upload Scan ────────────────────────────────────────
+
+    @PostMapping("/student/scan-image")
+    public String scanQrImage(
+            @RequestParam("qrImage") MultipartFile qrImage,
             @RequestParam String indexNumber,
-            Model model,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
         try {
+            // Decode QR code from uploaded image using ZXing
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(qrImage.getBytes()));
+            if (image == null) {
+                throw new ApiException("INVALID_IMAGE", "Could not read the uploaded image. Please try again.", HttpStatus.BAD_REQUEST);
+            }
+
+            LuminanceSource source = new BufferedImageLuminanceSource(image);
+            BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+            Result qrResult;
+            try {
+                qrResult = new MultiFormatReader().decode(bitmap);
+            } catch (NotFoundException e) {
+                throw new ApiException("NO_QR_FOUND", "No QR code detected in the image. Please take a clear photo of the QR code.", HttpStatus.BAD_REQUEST);
+            }
+
+            String token = qrResult.getText();
+            String deviceFingerprint = generateServerFingerprint(request);
+
             AttendanceDtos.ScanResponse scanResponse = attendanceService.scan(
                     new AttendanceDtos.ScanRequest(token, deviceFingerprint, indexNumber), request
             );
-            model.addAttribute("successCourse", scanResponse.courseCode());
+
+            redirectAttributes.addFlashAttribute("scanSuccess", true);
+            redirectAttributes.addFlashAttribute("successCourse", scanResponse.courseCode());
             String formattedTime = scanResponse.attendanceTime() != null ?
                     DateTimeFormatter.ofPattern("hh:mm a").withZone(ZoneId.systemDefault())
                             .format(scanResponse.attendanceTime()) : "Now";
-            model.addAttribute("markTime", formattedTime);
-            return "fragments/student-fragments :: success-container";
-        } catch (Exception e) {
-            model.addAttribute("scanError", e.getMessage() != null ? e.getMessage() : "Attendance marking failed");
-            model.addAttribute("token", token);
-            model.addAttribute("indexNumber", indexNumber);
-            return "fragments/student-fragments :: confirm-form-error";
+            redirectAttributes.addFlashAttribute("markTime", formattedTime);
+            return "redirect:/student";
+        } catch (ApiException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/student";
+        } catch (IOException e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to process the image. Please try again.");
+            return "redirect:/student";
         }
     }
 
-    @GetMapping("/student/stats")
-    @PreAuthorize("hasRole('STUDENT')")
-    public String getStudentStats(Model model) {
-        model.addAttribute("stats", statsService.studentStats());
-        return "fragments/student-fragments :: stats-grid";
+    // ── Session Code Manual Entry ───────────────────────────────────
+
+    @PostMapping("/student/scan-code")
+    public String scanByCode(
+            @RequestParam String sessionCode,
+            @RequestParam String indexNumber,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        try {
+            String deviceFingerprint = generateServerFingerprint(request);
+            AttendanceDtos.ScanResponse scanResponse = attendanceService.scan(
+                    new AttendanceDtos.ScanRequest(sessionCode.trim(), deviceFingerprint, indexNumber), request
+            );
+
+            redirectAttributes.addFlashAttribute("scanSuccess", true);
+            redirectAttributes.addFlashAttribute("successCourse", scanResponse.courseCode());
+            String formattedTime = scanResponse.attendanceTime() != null ?
+                    DateTimeFormatter.ofPattern("hh:mm a").withZone(ZoneId.systemDefault())
+                            .format(scanResponse.attendanceTime()) : "Now";
+            redirectAttributes.addFlashAttribute("markTime", formattedTime);
+            return "redirect:/student";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage() != null ? e.getMessage() : "Invalid session code");
+            return "redirect:/student";
+        }
     }
 
-    @GetMapping("/student/history")
-    @PreAuthorize("hasRole('STUDENT')")
-    public String getStudentHistory(Model model) {
-        model.addAttribute("history", attendanceService.history());
-        return "fragments/student-fragments :: history-rows";
-    }
-
-    // ── Student Course Management ───────────────────────────────────────
-
-    @GetMapping("/student/courses")
-    @PreAuthorize("hasRole('STUDENT')")
-    public String getStudentCourses(Model model) {
-        UserPrincipal student = SecurityUtils.requireRole(UserRole.STUDENT);
-        model.addAttribute("enrolledCourses", courseRepository.findByStudentId(student.getUserId()));
-        model.addAttribute("availableCourses", courseService.listAvailableCourses());
-        return "fragments/student-fragments :: course-list";
-    }
+    // ── Student Course Management ───────────────────────────────────
 
     @PostMapping("/student/courses/join")
-    @PreAuthorize("hasRole('STUDENT')")
-    @ResponseBody
-    public ResponseEntity<String> joinCourse(@RequestParam String courseCode) {
+    public String joinCourse(
+            @RequestParam String courseCode,
+            RedirectAttributes redirectAttributes) {
         try {
             courseService.joinCourse(courseCode);
-            return ResponseEntity.ok()
-                    .header("HX-Redirect", "/student")
-                    .body("");
+            return "redirect:/student";
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("<div class=\"rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800\">" + e.getMessage() + "</div>");
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/student";
         }
     }
+
+    @GetMapping("/student/course/{id}")
+    public String studentCourseDetails(@PathVariable Long id, Model model) {
+        UserPrincipal studentPrincipal = SecurityUtils.requireRole(UserRole.STUDENT);
+        AuthDtos.MeResponse me = authService.me();
+
+        CourseDtos.CourseDetailResponse detail = courseService.getCourseDetail(id);
+
+        java.util.Set<Long> attendedSessionIds = attendanceRecordRepository.findByStudentIdOrderByAttendanceTimeDesc(studentPrincipal.getUserId()).stream()
+                .filter(r -> r.getSession().getCourse().getId().equals(id))
+                .map(r -> r.getSession().getId())
+                .collect(java.util.stream.Collectors.toSet());
+
+        long totalSessions = detail.sessions().stream()
+                .filter(sess -> sess.status() == SessionStatus.CLOSED || sess.status() == SessionStatus.ACTIVE)
+                .count();
+        long attended = attendedSessionIds.size();
+        long missed = Math.max(0, totalSessions - attended);
+        int rate = totalSessions == 0 ? 0 : (int) Math.round((attended * 100.0) / totalSessions);
+
+        model.addAttribute("user", me);
+        model.addAttribute("course", detail.course());
+        model.addAttribute("classmates", detail.roster());
+        model.addAttribute("sessions", detail.sessions());
+        model.addAttribute("attendedSessionIds", attendedSessionIds);
+        model.addAttribute("stats", new StatsDtos.StudentStats(totalSessions, attended, missed, rate));
+
+        return "student-course";
+    }
+
+    // ── Lecturer Workspace ──────────────────────────────────────────
+
+    @GetMapping("/lecturer")
+    public String lecturerWorkspace(Model model) {
+        SecurityUtils.requireRole(UserRole.LECTURER);
+        AuthDtos.MeResponse me = authService.me();
+        model.addAttribute("user", me);
+        model.addAttribute("stats", statsService.lecturerStats(null));
+        model.addAttribute("courses", courseService.listCourses());
+        model.addAttribute("sessions", sessionService.listMySessions());
+        model.addAttribute("departments", departmentRepository.findAll());
+        return "lecturer";
+    }
+
+    @PostMapping("/lecturer/courses/create")
+    public String webCreateCourse(
+            @RequestParam String courseCode,
+            @RequestParam String courseName,
+            @RequestParam String departmentCode,
+            RedirectAttributes redirectAttributes) {
+        try {
+            courseService.createCourse(new CourseDtos.CreateCourseRequest(courseCode, courseName, departmentCode));
+            redirectAttributes.addFlashAttribute("success", "Course " + courseCode + " created successfully!");
+            return "redirect:/lecturer";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/lecturer";
+        }
+    }
+
+    @PostMapping("/lecturer/sessions/create")
+    public String webCreateSession(
+            @RequestParam Long courseId,
+            @RequestParam(required = false) SessionType sessionType,
+            RedirectAttributes redirectAttributes) {
+        try {
+            SessionDtos.SessionResponse session = sessionService.createSession(new SessionDtos.CreateSessionRequest(courseId, sessionType));
+            return "redirect:/lecturer/session/" + session.id();
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/lecturer";
+        }
+    }
+
+    @GetMapping("/lecturer/course/{id}")
+    public String lecturerCourseDetails(@PathVariable Long id, Model model) {
+        SecurityUtils.requireRole(UserRole.LECTURER);
+        AuthDtos.MeResponse me = authService.me();
+        CourseDtos.CourseDetailResponse detail = courseService.getCourseDetail(id);
+        model.addAttribute("user", me);
+        model.addAttribute("course", detail.course());
+        model.addAttribute("roster", detail.roster());
+        model.addAttribute("sessions", detail.sessions());
+        return "lecturer-course";
+    }
+
+    @GetMapping("/lecturer/session/{id}")
+    public String lecturerSessionDetails(@PathVariable Long id, Model model) {
+        SecurityUtils.requireRole(UserRole.LECTURER);
+        AuthDtos.MeResponse me = authService.me();
+        SessionDtos.SessionResponse session = sessionService.getSession(id);
+        SessionDtos.SessionAttendanceResponse attendance = sessionService.getAttendance(id);
+        model.addAttribute("user", me);
+        model.addAttribute("session", session);
+        model.addAttribute("attendance", attendance);
+        return "lecturer-session";
+    }
+
+    @PostMapping("/lecturer/sessions/{id}/close")
+    public String webCloseSession(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            sessionService.closeSession(id);
+            redirectAttributes.addFlashAttribute("success", "Session closed successfully.");
+            return "redirect:/lecturer";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/lecturer";
+        }
+    }
+
+    // ── Helper Methods ──────────────────────────────────────────────
 
     private void setTokenCookie(HttpServletResponse response, String token) {
         Cookie cookie = new Cookie("token", token);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
-        cookie.setMaxAge(480 * 60); // 8 hours (same as JWT configuration expiration)
+        cookie.setMaxAge(480 * 60); // 8 hours
         response.addCookie(cookie);
     }
 
@@ -390,179 +385,24 @@ public class WebController {
         response.addCookie(cookie);
     }
 
-    // ── Classroom & Summary Mappings ─────────────────────────────────────
-
-    @GetMapping("/lecturer/session/{id}/summary")
-    @PreAuthorize("hasRole('LECTURER')")
-    public String sessionSummary(@PathVariable Long id, Model model) {
-        UserPrincipal lecturer = SecurityUtils.requireRole(UserRole.LECTURER);
-        AuthDtos.MeResponse me = authService.me();
-        
-        AttendanceSession session = sessionRepository.findById(id)
-                .orElseThrow(() -> new ApiException("SESSION_NOT_FOUND", "Session not found", HttpStatus.NOT_FOUND));
-                
-        if (!session.getLecturer().getId().equals(lecturer.getUserId())) {
-            throw new ApiException("UNAUTHORIZED", "Unauthorized to view this session", HttpStatus.FORBIDDEN);
-        }
-        
-        model.addAttribute("user", me);
-        model.addAttribute("session", session);
-        model.addAttribute("stats", statsService.lecturerStats(id));
-        model.addAttribute("attendance", sessionService.getAttendance(id));
-        
-        List<AttendanceSession> allSessions = sessionRepository.findByLecturerIdOrderByCreatedAtDesc(lecturer.getUserId());
-        model.addAttribute("allSessions", allSessions);
-        
-        return "session-summary";
-    }
-
-    public record StudentRosterRow(
-            Long id,
-            String name,
-            String indexNumber,
-            long sessionsAttended,
-            int attendanceRate
-    ) {}
-
-    @GetMapping("/lecturer/course/{id}")
-    @PreAuthorize("hasRole('LECTURER')")
-    public String lecturerCourseDetails(@PathVariable Long id, Model model) {
-        UserPrincipal lecturer = SecurityUtils.requireRole(UserRole.LECTURER);
-        AuthDtos.MeResponse me = authService.me();
-        
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new ApiException("COURSE_NOT_FOUND", "Course not found", HttpStatus.NOT_FOUND));
-        
-        Lecturer l = lecturerRepository.findById(lecturer.getUserId())
-                .orElseThrow(() -> new ApiException("LECTURER_NOT_FOUND", "Lecturer not found", HttpStatus.NOT_FOUND));
-        if (l.getCourses().stream().noneMatch(c -> c.getId().equals(course.getId()))) {
-            throw new ApiException("UNAUTHORIZED", "Not your course", HttpStatus.FORBIDDEN);
-        }
-        
-        List<Student> enrolled = studentRepository.findByCourseId(course.getId());
-        List<AttendanceSession> sessions = sessionRepository.findAll().stream()
-                .filter(s -> s.getCourse().getId().equals(course.getId()))
-                .sorted((s1, s2) -> s2.getCreatedAt().compareTo(s1.getCreatedAt()))
-                .toList();
-
-        long totalSessions = sessions.stream()
-                .filter(s -> s.getStatus() == SessionStatus.CLOSED || s.getStatus() == SessionStatus.ACTIVE)
-                .count();
-
-        List<StudentRosterRow> roster = enrolled.stream()
-                .map(s -> {
-                    long attended = attendanceRecordRepository.findByStudentIdOrderByAttendanceTimeDesc(s.getId()).stream()
-                            .filter(r -> r.getSession().getCourse().getId().equals(course.getId()))
-                            .count();
-                    int rate = totalSessions == 0 ? 0 : (int) Math.round((attended * 100.0) / totalSessions);
-                    return new StudentRosterRow(s.getId(), s.getName(), s.getIndexNumber(), attended, rate);
-                })
-                .sorted((r1, r2) -> r1.name().compareToIgnoreCase(r2.name()))
-                .toList();
-
-        model.addAttribute("user", me);
-        model.addAttribute("course", course);
-        model.addAttribute("roster", roster);
-        model.addAttribute("sessions", sessions);
-        model.addAttribute("totalSessions", totalSessions);
-        
-        return "lecturer-course";
-    }
-
-    @GetMapping("/student/course/{id}")
-    @PreAuthorize("hasRole('STUDENT')")
-    public String studentCourseDetails(@PathVariable Long id, Model model) {
-        UserPrincipal studentPrincipal = SecurityUtils.requireRole(UserRole.STUDENT);
-        AuthDtos.MeResponse me = authService.me();
-        
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new ApiException("COURSE_NOT_FOUND", "Course not found", HttpStatus.NOT_FOUND));
-        
-        Student s = studentRepository.findById(studentPrincipal.getUserId())
-                .orElseThrow(() -> new ApiException("STUDENT_NOT_FOUND", "Student not found", HttpStatus.NOT_FOUND));
-        if (s.getCourses().stream().noneMatch(c -> c.getId().equals(course.getId()))) {
-            throw new ApiException("UNAUTHORIZED", "You are not enrolled in this course", HttpStatus.FORBIDDEN);
-        }
-        
-        List<Student> classmates = studentRepository.findByCourseId(course.getId()).stream()
-                .sorted((c1, c2) -> c1.getName().compareToIgnoreCase(c2.getName()))
-                .toList();
-        
-        List<AttendanceSession> sessions = sessionRepository.findAll().stream()
-                .filter(sess -> sess.getCourse().getId().equals(course.getId()))
-                .sorted((s1, s2) -> s2.getCreatedAt().compareTo(s1.getCreatedAt()))
-                .toList();
-        
-        List<AttendanceRecord> records = attendanceRecordRepository.findByStudentIdOrderByAttendanceTimeDesc(s.getId()).stream()
-                .filter(r -> r.getSession().getCourse().getId().equals(course.getId()))
-                .toList();
-        
-        long totalSessions = sessions.stream()
-                .filter(sess -> sess.getStatus() == SessionStatus.CLOSED || sess.getStatus() == SessionStatus.ACTIVE)
-                .count();
-        long attended = records.size();
-        long missed = Math.max(0, totalSessions - attended);
-        int rate = totalSessions == 0 ? 0 : (int) Math.round((attended * 100.0) / totalSessions);
-        
-        model.addAttribute("user", me);
-        model.addAttribute("course", course);
-        model.addAttribute("classmates", classmates);
-        model.addAttribute("sessions", sessions);
-        model.addAttribute("records", records);
-        model.addAttribute("stats", new StatsDtos.StudentStats(totalSessions, attended, missed, rate));
-        
-        return "student-course";
-    }
-
-    @PostMapping("/lecturer/course/{id}/add-student")
-    @PreAuthorize("hasRole('LECTURER')")
-    @ResponseBody
-    public ResponseEntity<String> addStudentToCourse(
-            @PathVariable Long id,
-            @RequestParam String indexNumber) {
+    /**
+     * Generates a server-side device fingerprint from the request's
+     * User-Agent and remote IP address. Replaces client-side FingerprintJS.
+     */
+    private String generateServerFingerprint(HttpServletRequest request) {
+        String ua = request.getHeader("User-Agent");
+        String ip = request.getRemoteAddr();
+        String raw = (ua != null ? ua : "") + "|" + (ip != null ? ip : "");
         try {
-            Course course = courseRepository.findById(id)
-                    .orElseThrow(() -> new ApiException("NOT_FOUND", "Course not found", HttpStatus.NOT_FOUND));
-            Student student = studentRepository.findByIndexNumberIgnoreCase(indexNumber.trim())
-                    .orElseThrow(() -> new ApiException("NOT_FOUND", "Student with index number '" + indexNumber + "' not found", HttpStatus.NOT_FOUND));
-            
-            if (student.getCourses().stream().anyMatch(c -> c.getId().equals(course.getId()))) {
-                throw new ApiException("ALREADY_ENROLLED", "Student is already enrolled in this course", HttpStatus.CONFLICT);
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(raw.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
             }
-            
-            student.getCourses().add(course);
-            studentRepository.save(student);
-            
-            return ResponseEntity.ok()
-                    .header("HX-Redirect", "/lecturer/course/" + id)
-                    .body("");
+            return sb.toString();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("<div class=\"rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800\">" + e.getMessage() + "</div>");
-        }
-    }
-
-    @PostMapping("/lecturer/course/{id}/remove-student")
-    @PreAuthorize("hasRole('LECTURER')")
-    @ResponseBody
-    public ResponseEntity<String> removeStudentFromCourse(
-            @PathVariable Long id,
-            @RequestParam Long studentId) {
-        try {
-            Course course = courseRepository.findById(id)
-                    .orElseThrow(() -> new ApiException("NOT_FOUND", "Course not found", HttpStatus.NOT_FOUND));
-            Student student = studentRepository.findById(studentId)
-                    .orElseThrow(() -> new ApiException("NOT_FOUND", "Student not found", HttpStatus.NOT_FOUND));
-            
-            student.getCourses().remove(course);
-            studentRepository.save(student);
-            
-            return ResponseEntity.ok()
-                    .header("HX-Redirect", "/lecturer/course/" + id)
-                    .body("");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("<div class=\"rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800\">" + e.getMessage() + "</div>");
+            return "server_fp_" + raw.hashCode();
         }
     }
 }
