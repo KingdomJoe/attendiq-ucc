@@ -4,11 +4,12 @@ import com.ucc.attendance.desktop.ApiClient;
 import com.ucc.attendance.desktop.SessionManager;
 import com.ucc.attendance.desktop.App;
 import com.ucc.attendance.desktop.util.FxUtils;
+import com.ucc.attendance.desktop.util.TableCells;
+import com.ucc.attendance.desktop.util.TableColumns;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -52,18 +53,21 @@ public class StudentCourseDetailController {
         studentIndexLabel.setText(SessionManager.getIdentifier());
 
         // Setup classmates columns
-        nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
-        indexCol.setCellValueFactory(new PropertyValueFactory<>("indexNumber"));
+        TableColumns.text(nameCol, ApiClient.StudentResponse::name);
+        TableColumns.text(indexCol, ApiClient.StudentResponse::indexNumber);
 
-        // Setup course history columns
         dateCol.setCellValueFactory(cellData -> {
+            if (cellData.getValue() == null || cellData.getValue().date() == null) {
+                return new javafx.beans.property.SimpleStringProperty("");
+            }
             Instant time = cellData.getValue().date();
             String formatted = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
                     .withZone(ZoneId.systemDefault())
                     .format(time);
             return new javafx.beans.property.SimpleStringProperty(formatted);
         });
-        statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
+        TableColumns.text(statusCol, StudentSessionHistoryRow::status);
+        TableCells.statusChip(statusCol);
     }
 
     private void loadCourseDetailData() {

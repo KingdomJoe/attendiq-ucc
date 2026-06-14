@@ -5,34 +5,50 @@
 
 <HBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.ucc.attendance.desktop.controller.StudentCourseDetailController"
+      fx:controller="com.ucc.attendance.desktop.controller.CourseDetailController"
       prefHeight="700"
       prefWidth="1000"
       style="-fx-background-color: #0f172a;">
 
-    <!-- Sidebar Navigation -->
     <VBox styleClass="sidebar" prefWidth="240" spacing="10">
         <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
-        <Label text="Student Portal" styleClass="text-subtitle" />
-        
+        <Label text="Lecturer Panel" styleClass="text-subtitle" />
         <Region prefHeight="30" />
-
-        <Button text="🏠 Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
-        <Button text="📋 Attendance History" onAction="#handleHistoryNav" styleClass="nav-button" />
-        
+        <Button text="Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
+        <Button text="Courses" onAction="#handleCoursesNav" styleClass="nav-button, nav-button-active" />
+        <Button text="Analytics" onAction="#handleAnalyticsNav" styleClass="nav-button" />
         <Region VBox.vgrow="ALWAYS" />
-        
-        <Label fx:id="studentNameLabel" text="Student Name" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
-        <Label fx:id="studentIndexLabel" text="UCC/CS/001" styleClass="text-subtitle" style="-fx-font-size: 11px;" />
-        <Button text="🚪 Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
+        <Label fx:id="lecturerLabel" text="Dr. Lecturer" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
+        <Button text="Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
     </VBox>
 
-    <!-- Main Content Area -->
-    <ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS" style="-fx-background: #0f172a; -fx-background-color: transparent;">
-        <VBox spacing="20" style="-fx-padding: 30;">
-            <!-- Header & Back Nav -->
-            <VBox spacing="10">
-                <Button text="← Back to Dashboard" onAction="#handleDashboardNav" styleClass="btn, btn-secondary" />
-                <Label fx:id="courseHeaderLabel" text="CSC302 — Data Structures" styleClass="text-title" />
-                <Label fx:id="departmentLabel" text="Department: Computer Science" styleClass="tex
-<truncated 3681 bytes>
+    <VBox spacing="20" style="-fx-padding: 30;" HBox.hgrow="ALWAYS">
+        <VBox spacing="5">
+            <Label fx:id="courseLabel" text="Course" styleClass="text-title" />
+            <Label fx:id="deptLabel" text="Department" styleClass="text-subtitle" />
+        </VBox>
+
+        <HBox spacing="20" VBox.vgrow="ALWAYS">
+            <VBox styleClass="card" spacing="10" HBox.hgrow="ALWAYS">
+                <Label text="Enrolled Students" style="-fx-font-weight: bold;" />
+                <TableView fx:id="studentsTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="studentIndexCol" text="Index" prefWidth="150" />
+                        <TableColumn fx:id="studentNameCol" text="Name" prefWidth="250" />
+                    </columns>
+                </TableView>
+            </VBox>
+            <VBox styleClass="card" spacing="10" HBox.hgrow="ALWAYS">
+                <Label text="Session History" style="-fx-font-weight: bold;" />
+                <TableView fx:id="sessionsTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="sessionDateCol" text="Date" prefWidth="150" />
+                        <TableColumn fx:id="sessionTypeCol" text="Type" prefWidth="100" />
+                        <TableColumn fx:id="sessionPresentCol" text="Present" prefWidth="80" />
+                        <TableColumn fx:id="sessionStatusCol" text="Status" prefWidth="100" />
+                    </columns>
+                </TableView>
+            </VBox>
+        </HBox>
+    </VBox>
+</HBox>

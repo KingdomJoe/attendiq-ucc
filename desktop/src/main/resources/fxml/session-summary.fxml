@@ -10,33 +10,53 @@
       prefWidth="1000"
       style="-fx-background-color: #0f172a;">
 
-    <!-- Sidebar (Non-interactive static view, highlighted Dashboard) -->
     <VBox styleClass="sidebar" prefWidth="240" spacing="10">
         <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
         <Label text="Lecturer Panel" styleClass="text-subtitle" />
-        
         <Region prefHeight="30" />
-
-        <Button text="🏠 Dashboard" onAction="#handleBack" styleClass="nav-button" />
-        <Button text="📚 Courses" onAction="#handleCoursesNav" styleClass="nav-button" />
-        <Button text="📈 Analytics" onAction="#handleAnalyticsNav" styleClass="nav-button" />
-        
+        <Button text="Dashboard" onAction="#handleBack" styleClass="nav-button" />
+        <Button text="Courses" onAction="#handleCoursesNav" styleClass="nav-button" />
+        <Button text="Analytics" onAction="#handleAnalyticsNav" styleClass="nav-button" />
         <Region VBox.vgrow="ALWAYS" />
-        
         <Label fx:id="lecturerLabel" text="Dr. Lecturer" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
-        <Button text="🚪 Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
+        <Button text="Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
     </VBox>
 
-    <!-- Main Content Area -->
-    <VBox HBox.hgrow="ALWAYS" spacing="20" style="-fx-padding: 30;">
-        <!-- Header -->
-        <HBox alignment="CENTER_LEFT">
-            <VBox>
-                <Label text="Session Summary" styleClass="text-title" />
-                <Label fx:id="sessionMetaLabel" text="Course Name | Date" styleClass="text-subtitle" />
+    <VBox spacing="20" style="-fx-padding: 30;" HBox.hgrow="ALWAYS">
+        <VBox spacing="5">
+            <Label text="Session Summary" styleClass="text-title" />
+            <Label fx:id="sessionMetaLabel" text="Session details" styleClass="text-subtitle" />
+        </VBox>
+
+        <HBox spacing="15">
+            <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                <Label text="Enrolled" styleClass="text-subtitle" />
+                <Label fx:id="enrolledCountLabel" text="0" styleClass="text-card-val" />
             </VBox>
-            <Region HBox.hgrow="ALWAYS" />
-            <HBox spacing="10">
-                <Button text="📊 Export CSV" onAction="#handleExportCsv" styleClass="btn, btn-primary" />
-                <Button text="🏠 Back" onActi
-<truncated 2197 bytes>
+            <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                <Label text="Present" styleClass="text-subtitle" />
+                <Label fx:id="presentCountLabel" text="0" styleClass="text-card-val" />
+            </VBox>
+            <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                <Label text="Rate" styleClass="text-subtitle" />
+                <Label fx:id="attendanceRateLabel" text="0%" styleClass="text-card-val" />
+            </VBox>
+        </HBox>
+
+        <HBox spacing="10">
+            <Button text="Export CSV" onAction="#handleExportCsv" styleClass="btn, btn-primary" />
+            <Button text="Back to Dashboard" onAction="#handleBack" styleClass="btn, btn-secondary" />
+        </HBox>
+
+        <VBox styleClass="card" spacing="10" VBox.vgrow="ALWAYS">
+            <TableView fx:id="rosterTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="indexCol" text="Index" prefWidth="150" />
+                    <TableColumn fx:id="nameCol" text="Name" prefWidth="280" />
+                    <TableColumn fx:id="statusCol" text="Status" prefWidth="120" />
+                    <TableColumn fx:id="timeCol" text="Time" prefWidth="180" />
+                </columns>
+            </TableView>
+        </VBox>
+    </VBox>
+</HBox>

@@ -3,14 +3,17 @@ package com.ucc.attendance.desktop.controller;
 import com.ucc.attendance.desktop.ApiClient;
 import com.ucc.attendance.desktop.SessionManager;
 import com.ucc.attendance.desktop.App;
+import com.ucc.attendance.desktop.util.CsvExportHelper;
 import com.ucc.attendance.desktop.util.FxUtils;
+import com.ucc.attendance.desktop.util.TableCells;
+import com.ucc.attendance.desktop.util.TableColumns;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -43,6 +46,7 @@ public class DashboardController {
     @FXML private TableColumn<ApiClient.SessionResponse, String> typeCol;
     @FXML private TableColumn<ApiClient.SessionResponse, Long> presentCol;
     @FXML private TableColumn<ApiClient.SessionResponse, String> statusCol;
+    @FXML private TableColumn<ApiClient.SessionResponse, ApiClient.SessionResponse> exportCol;
 
     private List<ApiClient.CourseResponse> coursesList;
     private ApiClient.SessionResponse activeSession;
@@ -55,22 +59,58 @@ public class DashboardController {
         sessionTypeComboBox.setItems(FXCollections.observableArrayList("LECTURE", "LAB"));
         sessionTypeComboBox.setValue("LECTURE");
 
-        // Set up Table Columns
-        courseCodeCol.setCellValueFactory(new PropertyValueFactory<>("courseCode"));
-        courseNameCol.setCellValueFactory(new PropertyValueFactory<>("courseName"));
-        
-        // Custom date formatter cell factory
+        // Record accessors — PropertyValueFactory does not work with Java records
+        TableColumns.text(courseCodeCol, ApiClient.SessionResponse::courseCode);
+        TableColumns.text(courseNameCol, ApiClient.SessionResponse::courseName);
         dateCol.setCellValueFactory(cellData -> {
+            if (cellData.getValue() == null || cellData.getValue().createdAt() == null) {
+                return new javafx.beans.property.SimpleStringProperty("");
+            }
             Instant createdAt = cellData.getValue().createdAt();
             String formatted = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
                     .withZone(ZoneId.systemDefault())
                     .format(createdAt);
             return new javafx.beans.property.SimpleStringProperty(formatted);
         });
+        TableColumns.text(typeCol, s -> s.sessionType() != null ? s.sessionType() : "");
+        TableColumns.numberLong(presentCol, ApiClient.SessionResponse::presentCount);
+        TableColumns.text(statusCol, s -> s.status() != null ? s.status() : "");
+        TableCells.statusChip(statusCol);
 
-        typeCol.setCellValueFactory(new PropertyValueFactory<>("sessionType"));
-        presentCol.setCellValueFactory(new PropertyValueFactory<>("presentCount"));
-        statusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
+        exportCol.setSortable(false);
+        exportCol.setResizable(false);
+        exportCol.setMinWidth(92);
+        exportCol.setPrefWidth(92);
+        exportCol.setMaxWidth(92);
+        exportCol.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue()));
+        exportCol.setCellFactory(col -> new TableCell<>() {
+            private final Hyperlink exportLink = new Hyperlink("CSV");
+            {
+                exportLink.getStyleClass().add("table-action-link");
+                exportLink.setOnAction(e -> {
+                    ApiClient.SessionResponse session = getItem();
+                    if (session != null) {
+                        CsvExportHelper.exportSessionCsv(session.id(), session.courseCode(), App.getPrimaryStage());
+                    }
+                });
+            }
+
+            @Override
+            protected void updateItem(ApiClient.SessionResponse session, boolean empty) {
+                super.updateItem(session, empty);
+                if (empty || session == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                setText(null);
+                setGraphic(exportLink);
+            }
+        });
+
+        sessionsTable.getStyleClass().addAll("structured-table", "sessions-table");
+        sessionsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_SUBSEQUENT_COLUMNS);
+        sessionsTable.setPlaceholder(new Label("No sessions yet. Start a new session above."));
 
         // Add double click handler to table row to view summary
         sessionsTable.setRowFactory(tv -> {
@@ -102,7 +142,11 @@ public class DashboardController {
                     coursesList = courses;
                     courseComboBox.getItems().clear();
                     for (ApiClient.CourseResponse c : courses) {
-                        courseComboBox.getItems().add(c.courseCode() + " - " + c.courseName());
+                        String label = c.courseCode() + " — " + c.courseName();
+                        if (c.active()) {
+                            label += " (active)";
+                        }
+                        courseComboBox.getItems().add(label);
                     }
 
                     totalStudentsLabel.setText(String.valueOf(stats.enrolled()));

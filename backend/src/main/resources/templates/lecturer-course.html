@@ -1,89 +1,93 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{layout :: html_head('Course Details')}"></head>
+<head th:replace="~{layout :: html_head('Course Classroom')}"></head>
 <body>
 
 <div th:replace="~{layout :: app_nav(~{::#nav-chip})}">
-    <span id="nav-chip" class="chip">
-        &#x1F4FC; Lecturer Portal
-    </span>
+    <span id="nav-chip" class="chip">&#x1F4FC; Lecturer Portal</span>
 </div>
 
-<main class="container page-content">
-    <div class="mb-3">
+<main class="container page-content course-classroom-page">
+    <div class="course-classroom-top">
         <a href="/lecturer" class="text-sm">&larr; Back to Dashboard</a>
+        <div class="course-classroom-heading">
+            <div>
+                <h1 class="course-classroom-title" th:text="${course.courseCode} + ' — ' + ${course.courseName}">CSC301 — Java Programming</h1>
+                <p class="course-classroom-meta" th:text="${course.departmentName}">Computer Science</p>
+            </div>
+            <span th:if="${course.active}" class="badge badge-live">Active</span>
+        </div>
     </div>
 
-    <!-- Course Header -->
-    <div class="card mb-4">
-        <h1 class="card-title" style="font-size:1.125rem;" th:text="${course.courseCode} + ' — ' + ${course.courseName}">CSC301 — Java Programming</h1>
-        <p class="text-xs text-muted" th:text="'Department: ' + ${course.departmentName}">Computer Science</p>
-    </div>
-
-    <div class="grid-2">
-        <!-- Sessions Held -->
-        <div class="card">
-            <h2 class="card-title">&#x1F4C5; Sessions History</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Present Count</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="s : ${sessions}">
-                            <td class="text-xs text-muted" th:text="${#temporals.format(s.createdAt, 'dd MMM yyyy, hh:mm a')}">Date</td>
-                            <td th:text="${s.sessionType}">Lecture</td>
-                            <td>
-                                <span th:if="${s.status.name() == 'ACTIVE'}" class="badge badge-live">Live</span>
-                                <span th:if="${s.status.name() == 'CLOSED'}" class="badge badge-absent">Closed</span>
-                            </td>
-                            <td th:text="${s.presentCount} + ' present'">0</td>
-                            <td>
-                                <a th:if="${s.status.name() == 'ACTIVE'}" th:href="@{'/lecturer/session/' + ${s.id}}" class="btn btn-primary btn-sm">View Live QR</a>
-                                <a th:if="${s.status.name() == 'CLOSED'}" th:href="@{'/sessions/' + ${s.id} + '/attendance/export'}" class="btn btn-outline btn-sm">Export</a>
-                            </td>
-                        </tr>
-                        <tr th:if="${sessions.isEmpty()}">
-                            <td colspan="5" class="text-center text-muted text-sm" style="padding:2rem 0;">No sessions held for this course yet</td>
-                        </tr>
-                    </tbody>
-                </table>
+    <div class="card card--classroom">
+        <div class="classroom-toolbar">
+            <div>
+                <h2 class="card-title card-title--compact">&#x1F465; Classroom / Enrolled Students (<span th:text="${roster.size()}">0</span>)</h2>
+                <p class="text-xs text-muted">Click a student row to expand their per-session attendance chart.</p>
+            </div>
+            <div class="enroll-link-toolbar">
+                <label class="text-xs text-muted" for="enrollment-url">Add students</label>
+                <div class="enroll-link-toolbar__row">
+                    <input type="text" class="form-input form-input--compact" id="enrollment-url" readonly th:value="${enrollmentUrl}" aria-label="Enrollment link">
+                    <button type="button" class="btn btn-outline btn-sm" id="copy-enroll-link">Copy link</button>
+                </div>
             </div>
         </div>
 
-        <!-- Enrolled Students (Roster) -->
-        <div class="card">
-            <h2 class="card-title">&#x1F465; Enrolled Students (<span th:text="${roster.size()}">0</span>)</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Index Number</th>
-                            <th>Email</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="mate : ${roster}">
+        <div class="table-container table-container--structured">
+            <table class="table-structured roster-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Index Number</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <th:block th:each="mate : ${roster}">
+                        <tr class="roster-row" th:attr="data-student-id=${mate.id}" th:data-course-id="${course.id}">
                             <td th:text="${mate.name}">Student Name</td>
                             <td class="text-muted text-xs" th:text="${mate.indexNumber}">UCC/CS/001</td>
                             <td class="text-muted text-xs" th:text="${mate.email}">student@ucc.edu.gh</td>
                         </tr>
-                        <tr th:if="${roster.isEmpty()}">
-                            <td colspan="3" class="text-center text-muted text-sm" style="padding:2rem 0;">No students enrolled in this course yet</td>
+                        <tr class="roster-expand-row hidden" th:attr="data-expand-for=${mate.id}">
+                            <td colspan="3">
+                                <div class="attendance-expand-panel">
+                                    <div class="attendance-expand-header">
+                                        <strong th:text="${mate.name}">Student</strong>
+                                        <span class="text-xs text-muted attendance-expand-summary">Loading sessions…</span>
+                                    </div>
+                                    <div class="attendance-heatmap attendance-heatmap--lg" th:attr="id='heatmap-' + ${mate.id}"></div>
+                                    <p class="text-xs text-muted mt-2">Each square is one held session. Green = present, red = absent.</p>
+                                </div>
+                            </td>
                         </tr>
-                    </tbody>
-                </table>
-            </div>
+                    </th:block>
+                    <tr th:if="${roster.isEmpty()}">
+                        <td colspan="3" class="text-center text-muted text-sm table-empty-cell">No students enrolled yet. Copy the enrollment link and share it with your class.</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </main>
 
+<script src="/js/attendance-heatmap.js"></script>
+<script>
+    document.getElementById('copy-enroll-link')?.addEventListener('click', async () => {
+        const input = document.getElementById('enrollment-url');
+        const btn = document.getElementById('copy-enroll-link');
+        try {
+            await navigator.clipboard.writeText(input.value);
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy link'; }, 2000);
+        } catch (e) {
+            input.select();
+            document.execCommand('copy');
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy link'; }, 2000);
+        }
+    });
+</script>
 </body>
 </html>

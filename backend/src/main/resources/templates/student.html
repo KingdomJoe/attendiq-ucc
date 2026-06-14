@@ -15,6 +15,7 @@
 <main class="container page-content">
 
     <!-- Error / Success Messages -->
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
     <div id="error-alert">
         <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
     </div>
@@ -135,15 +136,17 @@
         </div>
 
         <!-- Available Courses -->
-        <div th:if="${availableCourses != null and !availableCourses.isEmpty()}" class="mt-3">
-            <p class="form-label">Available courses</p>
-            <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
-                <form th:each="ac : ${availableCourses}" action="/student/courses/join" method="post" style="display:inline">
+        <div th:if="${availableCourses != null and !availableCourses.isEmpty()}" class="mt-4 available-courses-section">
+            <p class="form-label">Available courses to join</p>
+            <div class="available-courses-grid">
+                <form th:each="ac : ${availableCourses}" action="/student/courses/join" method="post" class="available-course-card">
                     <input type="hidden" name="courseCode" th:value="${ac.courseCode}">
-                    <button type="submit" class="btn btn-outline btn-sm">
-                        + <span th:text="${ac.courseCode}">CSC302</span>
-                        <span class="text-muted" th:text="' — ' + ${ac.courseName}">— Data Structures</span>
-                    </button>
+                    <div class="available-course-card__body">
+                        <div class="course-code" th:text="${ac.courseCode}">CSC302</div>
+                        <div class="course-name" th:text="${ac.courseName}">Data Structures</div>
+                        <div class="course-dept" th:text="${ac.departmentName}">CS</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm available-course-card__join">+ Join</button>
                 </form>
             </div>
         </div>

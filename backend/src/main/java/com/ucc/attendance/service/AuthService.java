@@ -61,6 +61,38 @@ public class AuthService {
     }
 
     @Transactional
+    public AuthDtos.AuthResponse registerStudentForCourse(String enrollmentToken, AuthDtos.StudentRegisterRequest req) {
+        Course course = courseRepository.findByEnrollmentToken(enrollmentToken.trim())
+                .orElseThrow(() -> new ApiException("NOT_FOUND", "Invalid enrollment link", HttpStatus.NOT_FOUND));
+
+        if (!req.email().matches(appProperties.studentEmailPattern())) {
+            throw new ApiException("INVALID_EMAIL", "Email must be an institutional address", HttpStatus.BAD_REQUEST);
+        }
+        if (studentRepository.existsByEmailIgnoreCase(req.email())) {
+            throw new ApiException("EMAIL_EXISTS", "Email already registered", HttpStatus.CONFLICT);
+        }
+        if (studentRepository.existsByIndexNumberIgnoreCase(req.indexNumber())) {
+            throw new ApiException("INDEX_EXISTS", "Index number already registered", HttpStatus.CONFLICT);
+        }
+
+        Department dept = departmentRepository.findByCodeIgnoreCase(req.departmentCode())
+                .orElseThrow(() -> new ApiException("INVALID_DEPARTMENT", "Department not found", HttpStatus.BAD_REQUEST));
+
+        Student student = Student.builder()
+                .name(req.name())
+                .email(req.email().toLowerCase())
+                .indexNumber(req.indexNumber().toUpperCase())
+                .passwordHash(passwordEncoder.encode(req.password()))
+                .department(dept)
+                .build();
+        student.getCourses().add(course);
+        studentRepository.save(student);
+
+        String token = jwtService.generateToken(student.getId(), student.getEmail(), UserRole.STUDENT);
+        return new AuthDtos.AuthResponse(token, UserRole.STUDENT, student.getId(), student.getName());
+    }
+
+    @Transactional
     public AuthDtos.AuthResponse registerLecturer(AuthDtos.LecturerRegisterRequest req) {
         // Validate the lecturer code against the pre-generated codes table
         LecturerCode lecturerCode = lecturerCodeRepository.findByCodeIgnoreCase(req.lecturerCode().trim())

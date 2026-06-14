@@ -15,10 +15,15 @@
         <a href="/student" class="text-sm">&larr; Back to Dashboard</a>
     </div>
 
-    <!-- Course Header -->
-    <div class="card mb-4">
-        <h1 class="card-title" style="font-size:1.125rem;" th:text="${course.courseCode} + ' — ' + ${course.courseName}">CSC302 — Data Structures</h1>
-        <p class="text-xs text-muted" th:text="'Department: ' + ${course.departmentName}">Computer Science</p>
+    <!-- Course Header (compact) -->
+    <div class="course-classroom-top mb-4">
+        <a href="/student" class="text-sm">&larr; Back to Dashboard</a>
+        <div class="course-classroom-heading mt-2">
+            <div>
+                <h1 class="course-classroom-title" th:text="${course.courseCode} + ' — ' + ${course.courseName}">CSC302 — Data Structures</h1>
+                <p class="course-classroom-meta" th:text="${course.departmentName}">Computer Science</p>
+            </div>
+        </div>
     </div>
 
     <!-- Stats -->
@@ -42,38 +47,26 @@
     </div>
 
     <div class="grid-2">
-        <!-- Session History -->
-        <div class="card">
-            <h2 class="card-title">&#x1F4C5; Session History</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="session : ${sessions}">
-                            <td th:text="${#temporals.format(session.createdAt, 'dd MMM yyyy, hh:mm a')}">01 Jan 2025</td>
-                            <td>
-                                <span th:if="${attendedSessionIds.contains(session.id)}" class="badge badge-present">Present</span>
-                                <span th:unless="${attendedSessionIds.contains(session.id)}" class="badge badge-absent">Absent</span>
-                            </td>
-                        </tr>
-                        <tr th:if="${sessions.isEmpty()}">
-                            <td colspan="2" class="text-center text-muted text-sm" style="padding:2rem 0;">No sessions yet</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- My Attendance -->
+        <div class="card card--attendance-sessions">
+            <h2 class="card-title">&#x1F4CA; My Attendance Sessions</h2>
+            <p class="text-xs text-muted mb-3">Each square is one held session. Green = present, red = absent.</p>
+            <div class="attendance-expand-header mb-3">
+                <strong th:text="${user.displayName}">You</strong>
+                <span class="text-xs text-muted" id="student-attendance-summary">Loading…</span>
+            </div>
+            <div class="attendance-heatmap attendance-heatmap--lg" id="student-self-heatmap"></div>
+            <div class="attendance-legend mt-3">
+                <span class="attendance-legend__item"><span class="attendance-cell attendance-cell--present"></span> Present</span>
+                <span class="attendance-legend__item"><span class="attendance-cell attendance-cell--absent"></span> Absent</span>
             </div>
         </div>
 
         <!-- Classmates -->
         <div class="card">
             <h2 class="card-title">&#x1F465; Classmates (<span th:text="${classmates.size()}">0</span>)</h2>
-            <div class="table-container">
-                <table>
+            <div class="table-container table-container--structured">
+                <table class="table-structured">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -95,5 +88,37 @@
     </div>
 </main>
 
+<script th:inline="javascript">
+    const studentCourseId = /*[[${course.id}]]*/ 0;
+    const studentUserId = /*[[${user.userId}]]*/ 0;
+</script>
+<script src="/js/attendance-heatmap.js"></script>
+<script>
+    (async function loadSelfHeatmap() {
+        if (!studentCourseId || !studentUserId) return;
+        const summary = document.getElementById('student-attendance-summary');
+        const container = document.getElementById('student-self-heatmap');
+        try {
+            const response = await fetch(`/courses/${studentCourseId}/students/${studentUserId}/attendance-grid`, {
+                credentials: 'same-origin'
+            });
+            if (!response.ok) throw new Error('Could not load attendance history');
+            const grid = await response.json();
+            summary.textContent = `${grid.presentCount} of ${grid.totalSessions} sessions attended`;
+            container.innerHTML = '';
+            grid.sessions.forEach(cell => {
+                const square = document.createElement('div');
+                square.className = 'attendance-cell ' + (cell.present ? 'attendance-cell--present' : 'attendance-cell--absent');
+                square.title = `${cell.present ? 'Present' : 'Absent'} — ${new Date(cell.sessionDate).toLocaleString()}`;
+                container.appendChild(square);
+            });
+            if (!grid.sessions.length) {
+                container.innerHTML = '<p class="text-xs text-muted">No sessions held yet.</p>';
+            }
+        } catch (error) {
+            summary.textContent = error.message;
+        }
+    })();
+</script>
 </body>
 </html>

@@ -10,29 +10,64 @@
       prefWidth="1000"
       style="-fx-background-color: #0f172a;">
 
-    <!-- Sidebar Navigation -->
     <VBox styleClass="sidebar" prefWidth="240" spacing="10">
         <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
         <Label text="Student Portal" styleClass="text-subtitle" />
-        
         <Region prefHeight="30" />
-
-        <Button text="🏠 Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
-        <Button text="📋 Attendance History" onAction="#handleHistoryNav" styleClass="nav-button" />
-        
+        <Button text="Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
+        <Button text="Attendance History" onAction="#handleHistoryNav" styleClass="nav-button" />
         <Region VBox.vgrow="ALWAYS" />
-        
         <Label fx:id="studentNameLabel" text="Student Name" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
         <Label fx:id="studentIndexLabel" text="UCC/CS/001" styleClass="text-subtitle" style="-fx-font-size: 11px;" />
-        <Button text="🚪 Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
+        <Button text="Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
     </VBox>
 
-    <!-- Main Content Area -->
-    <ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS" style="-fx-background: #0f172a; -fx-background-color: transparent;">
+    <ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS" style="-fx-background-color: #0f172a;">
         <VBox spacing="20" style="-fx-padding: 30;">
-            <!-- Header & Back Nav -->
-            <VBox spacing="10">
-                <Button text="← Back to Dashboard" onAction="#handleDashboardNav" styleClass="btn, btn-secondary" />
-                <Label fx:id="courseHeaderLabel" text="CSC302 — Data Structures" styleClass="text-title" />
-                <Label fx:id="departmentLabel" text="Department: Computer Science" styleClass="tex
-<truncated 3681 bytes>
+            <VBox spacing="5">
+                <Label fx:id="courseHeaderLabel" text="Course" styleClass="text-title" />
+                <Label fx:id="departmentLabel" text="Department" styleClass="text-subtitle" />
+            </VBox>
+
+            <HBox spacing="15">
+                <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                    <Label text="Sessions" styleClass="text-subtitle" />
+                    <Label fx:id="courseSessionsLabel" text="0" styleClass="text-card-val" />
+                </VBox>
+                <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                    <Label text="Attended" styleClass="text-subtitle" />
+                    <Label fx:id="attendedLabel" text="0" styleClass="text-card-val" />
+                </VBox>
+                <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                    <Label text="Missed" styleClass="text-subtitle" />
+                    <Label fx:id="missedLabel" text="0" styleClass="text-card-val" />
+                </VBox>
+                <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                    <Label text="Rate" styleClass="text-subtitle" />
+                    <Label fx:id="rateLabel" text="0%" styleClass="text-card-val" />
+                </VBox>
+            </HBox>
+
+            <HBox spacing="20" VBox.vgrow="ALWAYS">
+                <VBox styleClass="card" spacing="10" HBox.hgrow="ALWAYS">
+                    <Label text="My Attendance in This Course" style="-fx-font-weight: bold;" />
+                    <TableView fx:id="courseHistoryTable" prefHeight="220">
+                        <columns>
+                            <TableColumn fx:id="dateCol" text="Date" prefWidth="180" />
+                            <TableColumn fx:id="statusCol" text="Status" prefWidth="120" />
+                        </columns>
+                    </TableView>
+                </VBox>
+                <VBox styleClass="card" spacing="10" HBox.hgrow="ALWAYS">
+                    <Label text="Classmates" style="-fx-font-weight: bold;" />
+                    <TableView fx:id="classmatesTable" prefHeight="220">
+                        <columns>
+                            <TableColumn fx:id="nameCol" text="Name" prefWidth="200" />
+                            <TableColumn fx:id="indexCol" text="Index" prefWidth="150" />
+                        </columns>
+                    </TableView>
+                </VBox>
+            </HBox>
+        </VBox>
+    </ScrollPane>
+</HBox>

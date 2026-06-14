@@ -25,6 +25,61 @@
     height: 200px;
     border-radius: var(--radius-md);
     border: 1px solid var(--color-border);
+    background: #fff;
+}
+.qr-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.qr-card-header .card-title {
+    margin-bottom: 0;
+    text-align: left;
+}
+.qr-presenter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.qr-presenter:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    justify-content: center;
+    background: #0f172a;
+    padding: 1.5rem 1rem 2rem;
+    box-sizing: border-box;
+}
+.qr-presenter:fullscreen .qr-container {
+    width: min(92vmin, calc(100vw - 2rem));
+    height: min(92vmin, calc(100vh - 8rem));
+    margin-bottom: 1.25rem;
+    flex-shrink: 0;
+}
+.qr-presenter:fullscreen .qr-ring-svg {
+    width: 100%;
+    height: 100%;
+}
+.qr-presenter:fullscreen #qr-image {
+    width: 90%;
+    height: 90%;
+    max-width: none;
+    max-height: none;
+    border-width: 2px;
+}
+.qr-presenter:fullscreen #countdown-text {
+    font-size: clamp(1.25rem, 3.5vmin, 2rem) !important;
+    color: #e2e8f0 !important;
+    margin: 0;
+}
+.qr-presenter:fullscreen #token-display {
+    display: none;
+}
+.qr-presenter:fullscreen .qr-fullscreen-hint {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
 }
 .success-dot {
     width: 8px;
@@ -62,8 +117,8 @@
     <div class="card mb-4">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
             <div>
-                <h1 class="card-title" style="font-size:1.125rem; margin-bottom:0.25rem;" th:text="${session.courseCode} + ' — ' + ${session.courseName}">CSC301 — Java Programming</h1>
-                <p class="text-xs text-muted" th:text="'Session Type: ' + ${session.sessionType} + ' &middot; Started: ' + ${#temporals.format(session.createdAt, 'dd MMM yyyy, hh:mm a')}">Lecture</p>
+                <h1 class="card-title" style="font-size:1.125rem; margin-bottom:0.25rem;" th:text="${attendanceSession.courseCode} + ' — ' + ${attendanceSession.courseName}">CSC301 — Java Programming</h1>
+                <p class="text-xs text-muted" th:text="'Session Type: ' + ${attendanceSession.sessionType} + ' &middot; Started: ' + ${#temporals.format(attendanceSession.createdAt, 'dd MMM yyyy, hh:mm a')}">Lecture</p>
             </div>
             <span class="badge badge-live"><span class="success-dot"></span> Live Session</span>
         </div>
@@ -72,25 +127,33 @@
     <div class="grid-2">
         <!-- Live Dynamic QR Code Card -->
         <div class="card text-center" style="display:flex; flex-direction:column; justify-content:center;">
-            <h2 class="card-title" style="text-align:left;">&#x1F4F1; Dynamic Attendance QR Code</h2>
-            
-            <div class="qr-container">
-                <svg class="qr-ring-svg" width="240" height="240" viewBox="0 0 240 240">
-                    <circle cx="120" cy="120" r="114" fill="none" stroke="var(--color-border-light)" stroke-width="3"/>
-                    <circle cx="120" cy="120" r="114" fill="none" stroke="var(--color-primary)" stroke-width="3"
-                            stroke-linecap="round" stroke-dasharray="716.28" id="timer-ring"
-                            style="transform-origin: 120px 120px; transform: rotate(-90deg); transition: stroke-dashoffset 0.1s linear;"/>
-                </svg>
-                <img id="qr-image" src="" alt="Dynamic QR Code">
+            <div class="qr-card-header">
+                <h2 class="card-title">&#x1F4F1; Dynamic Attendance QR Code</h2>
+                <button type="button" id="qr-fullscreen-btn" class="btn btn-outline btn-sm" title="Project QR code fullscreen for students to scan">
+                    &#x26F6; Fullscreen
+                </button>
             </div>
-            
-            <div class="text-center">
-                <p id="countdown-text" style="font-size:0.9rem; font-weight:600; color:var(--color-text-secondary);">Refreshing in <span id="secs-left">5</span>s</p>
-                <p id="token-display" style="font-family: monospace; font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.5rem; letter-spacing: 0.05em;"></p>
+
+            <div id="qr-presenter" class="qr-presenter">
+                <div class="qr-container">
+                    <svg class="qr-ring-svg" width="240" height="240" viewBox="0 0 240 240">
+                        <circle cx="120" cy="120" r="114" fill="none" stroke="var(--color-border-light)" stroke-width="3"/>
+                        <circle cx="120" cy="120" r="114" fill="none" stroke="var(--color-primary)" stroke-width="3"
+                                stroke-linecap="round" id="timer-ring"
+                                style="transform-origin: 120px 120px; transform: rotate(-90deg);"/>
+                    </svg>
+                    <img id="qr-image" src="" alt="Dynamic QR Code">
+                </div>
+
+                <div class="text-center">
+                    <p id="countdown-text" style="font-size:0.9rem; font-weight:600; color:var(--color-text-secondary);">Refreshing in <span id="secs-left">5</span>s</p>
+                    <p id="token-display" style="font-family: monospace; font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.5rem; letter-spacing: 0.05em;"></p>
+                    <p class="qr-fullscreen-hint" style="display:none;">Press Esc to exit fullscreen</p>
+                </div>
             </div>
             
             <div style="margin-top: 2rem; border-top:1px solid var(--color-border); padding-top:1.5rem;">
-                <form th:action="@{'/lecturer/sessions/' + ${session.id} + '/close'}" method="post">
+                <form th:action="@{'/lecturer/sessions/' + ${attendanceSession.id} + '/close'}" method="post">
                     <button type="submit" class="btn btn-danger btn-block">&#x1F6A8; Close &amp; End Session</button>
                 </form>
             </div>
@@ -121,7 +184,7 @@
             </div>
 
             <div style="margin-top:1.5rem; display:flex; gap:0.5rem;">
-                <a th:href="@{'/sessions/' + ${session.id} + '/attendance/export'}" class="btn btn-outline btn-block btn-sm">&#x1F4E5; Export Attendance CSV</a>
+                <a th:href="@{'/sessions/' + ${attendanceSession.id} + '/attendance/export'}" class="btn btn-outline btn-block btn-sm">&#x1F4E5; Export Attendance CSV</a>
             </div>
         </div>
     </div>
@@ -129,65 +192,139 @@
 
 <script th:inline="javascript">
 /*<![CDATA[*/
-    const sessionId = [[${session.id}]];
+    const sessionId = [[${attendanceSession.id}]];
+    const QR_TTL_SEC = 5;
     const qrRingCircumference = 2 * Math.PI * 114; // ~716.28
-    
-    let countdownSecs = 5;
-    let qrRefreshInterval = null;
-    let timerRingInterval = null;
+
+    let cycleStartMs = 0;
+    let countdownRafId = null;
+    let qrFetchInFlight = false;
     let presentStudentIds = new Set();
 
-    // 1. Fetch Dynamic QR Code
+    function initTimerRing() {
+        const ring = document.getElementById("timer-ring");
+        if (!ring) return;
+        ring.style.strokeDasharray = String(qrRingCircumference);
+        ring.style.strokeDashoffset = "0";
+    }
+
+    function resetQrCycle() {
+        cycleStartMs = performance.now();
+    }
+
+    function updateRing(remainingSec) {
+        const ring = document.getElementById("timer-ring");
+        if (!ring) return;
+        const clamped = Math.max(0, Math.min(QR_TTL_SEC, remainingSec));
+        const progress = clamped / QR_TTL_SEC; // 1 = full ring, 0 = empty
+        ring.style.strokeDashoffset = String(qrRingCircumference * (1 - progress));
+    }
+
+    function updateCountdownDisplay(remainingSec) {
+        const label = document.getElementById("secs-left");
+        if (!label) return;
+        if (remainingSec <= 0) {
+            label.textContent = "0";
+            return;
+        }
+        label.textContent = String(Math.ceil(remainingSec));
+    }
+
+    function stopCountdownLoop() {
+        if (countdownRafId !== null) {
+            cancelAnimationFrame(countdownRafId);
+            countdownRafId = null;
+        }
+    }
+
+    function countdownTick() {
+        const elapsedSec = (performance.now() - cycleStartMs) / 1000;
+        const remainingSec = QR_TTL_SEC - elapsedSec;
+
+        updateCountdownDisplay(remainingSec);
+        updateRing(remainingSec);
+
+        if (remainingSec <= 0 && !qrFetchInFlight) {
+            updateQrCode();
+            return;
+        }
+
+        countdownRafId = requestAnimationFrame(countdownTick);
+    }
+
+    function startCountdownLoop() {
+        stopCountdownLoop();
+        resetQrCycle();
+        updateCountdownDisplay(QR_TTL_SEC);
+        updateRing(QR_TTL_SEC);
+        countdownRafId = requestAnimationFrame(countdownTick);
+    }
+
+    // 1. Fetch Dynamic QR Code (returns a Promise)
     function updateQrCode() {
-        fetch(`/sessions/${sessionId}/qr`)
-            .then(res => {
-                if (!res.ok) throw new Error("Session closed or unauthorized");
+        if (qrFetchInFlight) return Promise.resolve();
+        qrFetchInFlight = true;
+
+        return fetch(`/sessions/${sessionId}/qr`, { credentials: 'same-origin' })
+            .then(async res => {
+                if (!res.ok) {
+                    const body = await res.text();
+                    throw new Error(`QR request failed (${res.status}): ${body}`);
+                }
                 return res.json();
             })
             .then(data => {
                 document.getElementById("qr-image").src = "data:image/png;base64," + data.qrImageBase64;
-                document.getElementById("token-display").textContent = data.token.substring(data.token.length - 20); // short preview
-                countdownSecs = 5;
-                updateRing(5);
+                document.getElementById("token-display").textContent = data.token.substring(data.token.length - 20);
+                qrFetchInFlight = false;
+                startCountdownLoop();
             })
             .catch(err => {
+                qrFetchInFlight = false;
                 console.error("QR Code fetch failed:", err);
-                clearInterval(qrRefreshInterval);
-                clearInterval(timerRingInterval);
-                alert("Session closed or database error. Returning to dashboard.");
+                stopCountdownLoop();
+                alert("Could not load the live QR code. The session may be closed or your login expired. Returning to dashboard.");
                 window.location.href = "/lecturer";
             });
     }
 
-    // 2. Animate countdown ring (10 ticks per second for fluid rendering)
-    function startCountdown() {
-        let elapsed = 0;
-        timerRingInterval = setInterval(() => {
-            elapsed += 0.1;
-            let currentSecs = 5 - elapsed;
-            if (currentSecs <= 0) {
-                elapsed = 0;
-                currentSecs = 5;
-            }
-            document.getElementById("secs-left").textContent = Math.ceil(currentSecs);
-            updateRing(currentSecs);
-        }, 1000);
-        
-        // QR fetch triggers every 5 seconds
-        qrRefreshInterval = setInterval(updateQrCode, 5000);
+    function isQrFullscreen() {
+        return document.fullscreenElement === document.getElementById("qr-presenter");
     }
 
-    function updateRing(secs) {
-        const ring = document.getElementById("timer-ring");
-        if (ring) {
-            const offset = qrRingCircumference * (1 - secs / 5);
-            ring.style.strokeDashoffset = offset;
+    function syncFullscreenUi() {
+        const btn = document.getElementById("qr-fullscreen-btn");
+        const hint = document.querySelector(".qr-fullscreen-hint");
+        const active = isQrFullscreen();
+        if (btn) {
+            btn.textContent = active ? "\u2715 Exit Fullscreen" : "\u26F6 Fullscreen";
+            btn.setAttribute("aria-pressed", active ? "true" : "false");
+        }
+        if (hint) {
+            hint.style.display = active ? "block" : "none";
         }
     }
 
+    async function toggleQrFullscreen() {
+        const presenter = document.getElementById("qr-presenter");
+        if (!presenter) return;
+        try {
+            if (isQrFullscreen()) {
+                await document.exitFullscreen();
+            } else {
+                await presenter.requestFullscreen();
+            }
+        } catch (err) {
+            console.error("Fullscreen failed:", err);
+            alert("Fullscreen is not available in this browser. Try F11 or use a supported browser.");
+        }
+    }
+
+    document.addEventListener("fullscreenchange", syncFullscreenUi);
+
     // 3. Poll attendance list
     function pollAttendance() {
-        fetch(`/sessions/${sessionId}/attendance`)
+        fetch(`/sessions/${sessionId}/attendance`, { credentials: 'same-origin' })
             .then(res => res.json())
             .then(data => {
                 const tbody = document.getElementById("attendance-tbody");
@@ -230,8 +367,9 @@
 
     // Initialize Page
     document.addEventListener("DOMContentLoaded", () => {
+        initTimerRing();
+        document.getElementById("qr-fullscreen-btn")?.addEventListener("click", toggleQrFullscreen);
         updateQrCode();
-        startCountdown();
         
         // Initial attendance check
         pollAttendance();

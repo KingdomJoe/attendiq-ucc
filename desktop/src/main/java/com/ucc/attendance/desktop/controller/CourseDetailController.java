@@ -4,13 +4,14 @@ import com.ucc.attendance.desktop.ApiClient;
 import com.ucc.attendance.desktop.App;
 import com.ucc.attendance.desktop.SessionManager;
 import com.ucc.attendance.desktop.util.FxUtils;
+import com.ucc.attendance.desktop.util.TableCells;
+import com.ucc.attendance.desktop.util.TableColumns;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
 import java.time.Instant;
@@ -42,20 +43,26 @@ public class CourseDetailController {
         lecturerLabel.setText(SessionManager.getLecturerName());
 
         // Setup student roster table columns
-        studentIndexCol.setCellValueFactory(new PropertyValueFactory<>("indexNumber"));
-        studentNameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        TableColumns.text(studentIndexCol, ApiClient.StudentResponse::indexNumber);
+        TableColumns.text(studentNameCol, ApiClient.StudentResponse::name);
 
-        // Setup session history table columns
         sessionDateCol.setCellValueFactory(cellData -> {
+            if (cellData.getValue() == null || cellData.getValue().createdAt() == null) {
+                return new javafx.beans.property.SimpleStringProperty("");
+            }
             Instant createdAt = cellData.getValue().createdAt();
             String formatted = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
                     .withZone(ZoneId.systemDefault())
                     .format(createdAt);
             return new javafx.beans.property.SimpleStringProperty(formatted);
         });
-        sessionTypeCol.setCellValueFactory(new PropertyValueFactory<>("sessionType"));
-        sessionPresentCol.setCellValueFactory(new PropertyValueFactory<>("presentCount"));
-        sessionStatusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
+        TableColumns.text(sessionTypeCol, s -> s.sessionType() != null ? s.sessionType() : "");
+        TableColumns.numberLong(sessionPresentCol, ApiClient.SessionResponse::presentCount);
+        TableColumns.text(sessionStatusCol, s -> s.status() != null ? s.status() : "");
+        TableCells.statusChip(sessionStatusCol);
+
+        studentsTable.getStyleClass().add("structured-table");
+        sessionsTable.getStyleClass().add("structured-table");
 
         sessionsTable.setRowFactory(tv -> {
             TableRow<ApiClient.SessionResponse> row = new TableRow<>();

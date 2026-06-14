@@ -1,66 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
-2: 
-3: <?import javafx.scene.control.*?>
-4: <?import javafx.scene.layout.*?>
-5: <?import javafx.scene.chart.*?>
-6: 
-7: <HBox xmlns="http://javafx.com/javafx"
-8:       xmlns:fx="http://javafx.com/fxml"
-9:       fx:controller="com.ucc.attendance.desktop.controller.AnalyticsController"
-10:       prefHeight="700"
-11:       prefWidth="1000"
-12:       style="-fx-background-color: #0f172a;">
-13: 
-14:     <!-- Sidebar Navigation -->
-15:     <VBox styleClass="sidebar" prefWidth="240" spacing="10">
-16:         <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
-17:         <Label text="Lecturer Panel" styleClass="text-subtitle" />
-18:         
-19:         <Region prefHeight="30" />
-20: 
-21:         <Button text="🏠 Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
-22:         <Button text="📚 Courses" onAction="#handleCoursesNav" styleClass="nav-button" />
-23:         <Button text="📈 Analytics" styleClass="nav-button, nav-button-active" />
-24:         
-25:         <Region VBox.vgrow="ALWAYS" />
-26:         
-27:         <Label fx:id="lecturerLabel" text="Dr. Lecturer" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
-28:         <Button text="🚪 Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
-29:     </VBox>
-30: 
-31:     <!-- Main Content Area -->
-32:     <VBox HBox.hgrow="ALWAYS" spacing="20" style="-fx-padding: 30;">
-33:         <!-- Header -->
-34:         <VBox>
-35:             <Label text="Attendance Analytics" styleClass="text-title" />
-36:             <Label text="Performance metrics and attendance rates across your assigned courses." styleClass="text-subtitle" />
-37:         </VBox>
-38: 
-39:         <!-- Bar Chart Card -->
-40:         <VBox styleClass="card" spacing="10" VBox.vgrow="ALWAYS">
-41:             <Label text="📊 Average Attendance Rate per Course (%)" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #f8fafc;" />
-42:             <BarChart fx:id="attendanceChart" legendVisible="false" prefHeight="300" VBox.vgrow="ALWAYS">
-43:                 <xAxis>
-44:                     <CategoryAxis label="Courses" fx:id="courseAxis" />
-45:                 </xAxis>
-46:                 <yAxis>
-47:                     <NumberAxis label="Rate (%)" lowerBound="0" upperBound="100" tickUnit="10" autoRanging="false" fx:id="rateAxis" />
-48:                 </yAxis>
-49:             </BarChart>
-50:         </VBox>
-51: 
-52:         <!-- Course Summary Table Card -->
-53:         <VBox styleClass="card" spacing="10" prefHeight="220">
-54:             <Label text="📈 Course Breakdown Metrics" style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #f8fafc;" />
-55:             <TableView fx:id="metricsTable" VBox.vgrow="ALWAYS">
-56:                 <columns>
-57:                     <TableColumn fx:id="codeCol" text="Course Code" prefWidth="120" />
-58:                     <TableColumn fx:id="nameCol" text="Course Name" prefWidth="280" />
-59:                     <TableColumn fx:id="sessionsHeldCol" text="Sessions Held" prefWidth="120" />
-60:                     <TableColumn fx:id="totalPresentCol" text="Total Present Slots" prefWidth="120" />
-61:                     <TableColumn fx:id="avgRateCol" text="Average Attendance" prefWidth="130" />
-62:                 </columns>
-63:             </TableView>
-64:         </VBox>
-65:     </VBox>
-66: </HBox>
+
+
+
+<?import javafx.scene.control.*?>
+
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.chart.*?>
+
+
+
+<HBox xmlns="http://javafx.com/javafx"
+
+      xmlns:fx="http://javafx.com/fxml"
+
+      fx:controller="com.ucc.attendance.desktop.controller.AnalyticsController"
+
+      prefHeight="700"
+
+      prefWidth="1000"
+
+      style="-fx-background-color: #0f172a;">
+
+
+
+    <VBox styleClass="sidebar" spacing="10" HBox.hgrow="NEVER">
+
+        <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
+
+        <Label text="Lecturer Panel" styleClass="text-subtitle" />
+
+        <Region prefHeight="30" />
+
+        <Button text="Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
+
+        <Button text="Courses" onAction="#handleCoursesNav" styleClass="nav-button" />
+
+        <Button text="Analytics" styleClass="nav-button, nav-button-active" />
+
+        <Region VBox.vgrow="ALWAYS" />
+
+        <Label fx:id="lecturerLabel" text="Dr. Lecturer" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
+
+        <Button text="Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
+
+    </VBox>
+
+
+
+    <VBox HBox.hgrow="ALWAYS" spacing="20" styleClass="content-pane">
+
+        <HBox alignment="CENTER_LEFT" spacing="12">
+
+            <VBox spacing="5" HBox.hgrow="ALWAYS">
+
+                <Label text="Attendance Analytics" styleClass="text-title" />
+
+                <Label text="Performance metrics across your assigned courses. Data refreshes every 30 seconds." styleClass="text-subtitle" />
+
+            </VBox>
+
+            <Button fx:id="refreshButton" text="Refresh Now" styleClass="btn, btn-secondary" />
+
+        </HBox>
+
+
+
+        <VBox styleClass="card" spacing="12" VBox.vgrow="ALWAYS">
+
+            <HBox alignment="CENTER_LEFT" spacing="10">
+
+                <Label text="Average Attendance Rate" styleClass="card-title" />
+
+                <Label fx:id="chartSubtitleLabel" text="All courses" styleClass="text-subtitle" />
+
+            </HBox>
+
+            <FlowPane fx:id="courseFilterBar" hgap="8" vgap="8" />
+
+            <BarChart fx:id="attendanceChart" legendVisible="false" prefHeight="280" VBox.vgrow="ALWAYS" styleClass="analytics-chart">
+
+                <xAxis>
+
+                    <CategoryAxis label="Courses" fx:id="courseAxis" />
+
+                </xAxis>
+
+                <yAxis>
+
+                    <NumberAxis label="Rate (%)" lowerBound="0" upperBound="100" tickUnit="10" autoRanging="false" fx:id="rateAxis" />
+
+                </yAxis>
+
+            </BarChart>
+
+        </VBox>
+
+
+
+        <VBox styleClass="card" spacing="10" prefHeight="240">
+
+            <Label text="Course Breakdown Metrics" styleClass="card-title" />
+
+            <TableView fx:id="metricsTable" VBox.vgrow="ALWAYS" styleClass="structured-table">
+
+                <columns>
+
+                    <TableColumn fx:id="codeCol" text="Course Code" prefWidth="110" minWidth="90" />
+
+                    <TableColumn fx:id="nameCol" text="Course Name" prefWidth="220" minWidth="140" />
+
+                    <TableColumn fx:id="sessionsHeldCol" text="Sessions Held" prefWidth="110" minWidth="90" />
+
+                    <TableColumn fx:id="totalPresentCol" text="Total Present" prefWidth="110" minWidth="90" />
+
+                    <TableColumn fx:id="avgRateCol" text="Avg Rate" prefWidth="100" minWidth="80" />
+
+                </columns>
+
+            </TableView>
+
+        </VBox>
+
+    </VBox>
+
+</HBox>
+

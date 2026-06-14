@@ -251,6 +251,21 @@ public class WebController {
             RedirectAttributes redirectAttributes) {
         try {
             courseService.joinCourse(courseCode);
+            redirectAttributes.addFlashAttribute("success", "Joined " + courseCode.toUpperCase() + " successfully.");
+            return "redirect:/student";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/student";
+        }
+    }
+
+    @PostMapping("/student/courses/{id}/leave")
+    public String leaveCourse(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+        try {
+            courseService.leaveCourse(id);
+            redirectAttributes.addFlashAttribute("success", "Removed course from My Courses.");
             return "redirect:/student";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -296,24 +311,72 @@ public class WebController {
         model.addAttribute("user", me);
         model.addAttribute("stats", statsService.lecturerStats(null));
         model.addAttribute("courses", courseService.listCourses());
-        model.addAttribute("sessions", sessionService.listMySessions());
+        model.addAttribute("assignableCourses", courseService.listAssignableCourses(null));
         model.addAttribute("departments", departmentRepository.findAll());
+        model.addAttribute("sessions", sessionService.listMySessions());
+        courseService.findFocusedCourse(me.userId()).ifPresent(course ->
+                model.addAttribute("focusedCourseCode", course.getCourseCode()));
         return "lecturer";
     }
 
-    @PostMapping("/lecturer/courses/create")
-    public String webCreateCourse(
-            @RequestParam String courseCode,
-            @RequestParam String courseName,
-            @RequestParam String departmentCode,
+    @PostMapping("/lecturer/courses/assign")
+    public String webAssignCourse(
+            @RequestParam Long courseId,
             RedirectAttributes redirectAttributes) {
         try {
-            courseService.createCourse(new CourseDtos.CreateCourseRequest(courseCode, courseName, departmentCode));
-            redirectAttributes.addFlashAttribute("success", "Course " + courseCode + " created successfully!");
+            CourseDtos.CourseResponse course = courseService.assignCourseToLecturer(courseId);
+            redirectAttributes.addFlashAttribute("success", "Assigned to " + course.courseCode() + " successfully.");
             return "redirect:/lecturer";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/lecturer";
+        }
+    }
+
+    @PostMapping("/lecturer/courses/{id}/focus")
+    public String webFocusCourse(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+        try {
+            CourseDtos.CourseResponse course = courseService.setFocusedCourse(id);
+            redirectAttributes.addFlashAttribute("success", course.courseCode() + " is now your active course.");
+            return "redirect:/lecturer";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/lecturer";
+        }
+    }
+
+    @GetMapping("/enroll/{token}")
+    public String enrollPage(@PathVariable String token, Model model) {
+        CourseDtos.CourseResponse course = courseService.getPublicCourseSummary(token);
+        model.addAttribute("course", course);
+        model.addAttribute("token", token);
+        model.addAttribute("departmentCode", course.departmentCode());
+        return "enroll";
+    }
+
+    @PostMapping("/enroll/{token}")
+    public String enrollSubmit(
+            @PathVariable String token,
+            @RequestParam String name,
+            @RequestParam String email,
+            @RequestParam String indexNumber,
+            @RequestParam String departmentCode,
+            @RequestParam String password,
+            HttpServletResponse response,
+            RedirectAttributes redirectAttributes) {
+        try {
+            AuthDtos.AuthResponse authRes = authService.registerStudentForCourse(
+                    token,
+                    new AuthDtos.StudentRegisterRequest(name, email, indexNumber, departmentCode, password)
+            );
+            setTokenCookie(response, authRes.token());
+            redirectAttributes.addFlashAttribute("success", "Welcome! You are now enrolled in the course.");
+            return "redirect:/student";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage() != null ? e.getMessage() : "Enrollment failed");
+            return "redirect:/enroll/" + token;
         }
     }
 
@@ -339,7 +402,7 @@ public class WebController {
         model.addAttribute("user", me);
         model.addAttribute("course", detail.course());
         model.addAttribute("roster", detail.roster());
-        model.addAttribute("sessions", detail.sessions());
+        model.addAttribute("enrollmentUrl", detail.enrollmentUrl());
         return "lecturer-course";
     }
 
@@ -350,7 +413,8 @@ public class WebController {
         SessionDtos.SessionResponse session = sessionService.getSession(id);
         SessionDtos.SessionAttendanceResponse attendance = sessionService.getAttendance(id);
         model.addAttribute("user", me);
-        model.addAttribute("session", session);
+        // Must not be named "session" — Thymeleaf reserves ${session} for HttpSession.
+        model.addAttribute("attendanceSession", session);
         model.addAttribute("attendance", attendance);
         return "lecturer-session";
     }

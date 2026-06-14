@@ -1,66 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
-2: 
-3: <?import javafx.scene.control.*?>
-4: <?import javafx.scene.layout.*?>
-5: <?import javafx.geometry.Insets?>
-6: 
-7: <HBox xmlns="http://javafx.com/javafx"
-8:       xmlns:fx="http://javafx.com/fxml"
-9:       fx:controller="com.ucc.attendance.desktop.controller.StudentDashboardController"
-10:       prefHeight="700"
-11:       prefWidth="1000"
-12:       style="-fx-background-color: #0f172a;">
-13: 
-14:     <!-- Sidebar Navigation -->
-15:     <VBox styleClass="sidebar" prefWidth="240" spacing="10">
-16:         <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
-17:         <Label text="Student Portal" styleClass="text-subtitle" />
-18:         
-19:         <Region prefHeight="30" />
-20: 
-21:         <Button text="🏠 Dashboard" styleClass="nav-button, nav-button-active" />
-22:         <Button text="📋 Attendance History" onAction="#handleHistoryNav" styleClass="nav-button" />
-23:         
-24:         <Region VBox.vgrow="ALWAYS" />
-25:         
-26:         <Label fx:id="studentNameLabel" text="Student Name" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
-27:         <Label fx:id="studentIndexLabel" text="UCC/CS/001" styleClass="text-subtitle" style="-fx-font-size: 11px;" />
-28:         <Button text="🚪 Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
-29:     </VBox>
-30: 
-31:     <!-- Main Content Area -->
-32:     <ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS" style="-fx-background: #0f
-<truncated 2532 bytes>
-Pane hgap="20" vgap="20">
-80:                 <columnConstraints>
-81:                     <ColumnConstraints percentWidth="50" />
-82:                     <ColumnConstraints percentWidth="50" />
-83:                 </columnConstraints>
-84:                 <rowConstraints>
-85:                     <RowConstraints />
-86:                 </rowConstraints>
-87: 
-88:                 <!-- Enrolled Courses Card -->
-89:                 <VBox styleClass="card" spacing="15" GridPane.columnIndex="0" VBox.vgrow="ALWAYS">
-90:                     <Label text="📚 My Enrolled Courses" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #f8fafc;" />
-91:                     <ListView fx:id="enrolledCoursesListView" prefHeight="250" style="-fx-background-color: transparent;" />
-92:                 </VBox>
-93: 
-94:                 <!-- Join Course Card -->
-95:                 <VBox styleClass="card" spacing="15" GridPane.columnIndex="1">
-96:                     <Label text="⚡ Join a Course" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #f8fafc;" />
-97:                     
-98:                     <VBox spacing="5">
-99:                         <Label text="Available Courses to Join" styleClass="text-subtitle" />
-100:                         <ComboBox fx:id="availableCoursesComboBox" promptText="Choose available course..." maxWidth="Infinity" />
-101:                     </VBox>
-102:                     
-103:                     <Label text="OR Enter Course Code Manually" styleClass="text-subtitle" style="-fx-font-size: 11px;" />
-104:                     <TextField fx:id="manualCodeField" promptText="e.g. CSC302" />
-105:                     
-106:                     <Button fx:id="joinCourseButton" text="➕ Join Course" onAction="#handleJoinCourse" styleClass="btn, btn-primary" maxWidth="Infinity" />
-107:                 </VBox>
-108:             </GridPane>
-109:         </VBox>
-110:     </ScrollPane>
-111: </HBox>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.ucc.attendance.desktop.controller.StudentDashboardController"
+      prefHeight="700"
+      prefWidth="1000"
+      style="-fx-background-color: #0f172a;">
+
+    <VBox styleClass="sidebar" prefWidth="240" spacing="10">
+        <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
+        <Label text="Student Portal" styleClass="text-subtitle" />
+        <Region prefHeight="30" />
+        <Button text="Dashboard" styleClass="nav-button, nav-button-active" />
+        <Button text="Attendance History" onAction="#handleHistoryNav" styleClass="nav-button" />
+        <Region VBox.vgrow="ALWAYS" />
+        <Label fx:id="studentNameLabel" text="Student Name" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
+        <Label fx:id="studentIndexLabel" text="UCC/CS/001" styleClass="text-subtitle" style="-fx-font-size: 11px;" />
+        <Button text="Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
+    </VBox>
+
+    <ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS" styleClass="content-scroll">
+        <VBox spacing="20" styleClass="content-pane">
+            <VBox spacing="5">
+                <Label fx:id="welcomeLabel" text="Welcome" styleClass="text-title" />
+                <Label text="Your attendance overview and course enrollment." styleClass="text-subtitle" />
+            </VBox>
+
+            <HBox spacing="15">
+                <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                    <Label text="Total Sessions" styleClass="text-subtitle" />
+                    <Label fx:id="totalSessionsLabel" text="0" styleClass="text-card-val" />
+                </VBox>
+                <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                    <Label text="Attended" styleClass="text-subtitle" />
+                    <Label fx:id="attendedLabel" text="0" styleClass="text-card-val" />
+                </VBox>
+                <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                    <Label text="Missed" styleClass="text-subtitle" />
+                    <Label fx:id="missedLabel" text="0" styleClass="text-card-val" />
+                </VBox>
+                <VBox styleClass="card" spacing="8" HBox.hgrow="ALWAYS">
+                    <Label text="Attendance Rate" styleClass="text-subtitle" />
+                    <Label fx:id="rateLabel" text="0%" styleClass="text-card-val" />
+                </VBox>
+            </HBox>
+
+            <GridPane hgap="20" vgap="20">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50" />
+                    <ColumnConstraints percentWidth="50" />
+                </columnConstraints>
+
+                <VBox styleClass="card" spacing="15" GridPane.columnIndex="0" VBox.vgrow="ALWAYS">
+                    <Label text="My Enrolled Courses" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
+                    <ListView fx:id="enrolledCoursesListView" prefHeight="250" styleClass="dark-list" />
+                </VBox>
+
+                <VBox styleClass="card" spacing="15" GridPane.columnIndex="1">
+                    <Label text="Join a Course" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
+                    <Label text="Available courses" styleClass="text-subtitle" />
+                    <ComboBox fx:id="availableCoursesComboBox" promptText="Choose available course..." maxWidth="Infinity" />
+                    <Label text="Or enter course code manually" styleClass="text-subtitle" />
+                    <TextField fx:id="manualCodeField" promptText="e.g. CSC302" />
+                    <Button fx:id="joinCourseButton" text="Join Course" onAction="#handleJoinCourse" styleClass="btn, btn-primary" maxWidth="Infinity" />
+                </VBox>
+            </GridPane>
+        </VBox>
+    </ScrollPane>
+</HBox>

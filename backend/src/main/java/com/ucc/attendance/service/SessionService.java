@@ -11,6 +11,7 @@ import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
@@ -48,9 +49,11 @@ public class SessionService {
             throw new ApiException("FORBIDDEN", "Course not assigned to lecturer", HttpStatus.FORBIDDEN);
         }
         if (l.getCourses().isEmpty()) {
-            l.getCourses().add(course);
+            l.linkCourse(course, true);
             lecturerRepository.save(l);
         }
+
+        closeAllActiveSessions(lecturer.getUserId());
 
         SessionType sessionType = req.sessionType() != null ? req.sessionType() : SessionType.LECTURE;
         AttendanceSession session = AttendanceSession.builder()
@@ -68,11 +71,34 @@ public class SessionService {
         return toSessionResponse(session);
     }
 
+    @Transactional
     public List<SessionDtos.SessionResponse> listMySessions() {
         UserPrincipal lecturer = SecurityUtils.requireRole(UserRole.LECTURER);
+        reconcileStaleActiveSessions(lecturer.getUserId());
         return sessionRepository.findByLecturerIdOrderByCreatedAtDesc(lecturer.getUserId()).stream()
                 .map(this::toSessionResponse)
                 .toList();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void reconcileStaleActiveSessions(Long lecturerId) {
+        List<AttendanceSession> actives = sessionRepository.findByLecturerIdAndStatusOrderByCreatedAtDesc(
+                lecturerId, SessionStatus.ACTIVE);
+        if (actives.size() <= 1) {
+            return;
+        }
+        Instant now = Instant.now();
+        Long keepId = actives.get(0).getId();
+        for (AttendanceSession session : actives) {
+            if (session.getId().equals(keepId)) {
+                continue;
+            }
+            session.setStatus(SessionStatus.CLOSED);
+            if (session.getClosedAt() == null) {
+                session.setClosedAt(now);
+            }
+            sessionRepository.save(session);
+        }
     }
 
     @Transactional
@@ -190,7 +216,7 @@ public class SessionService {
         return session;
     }
 
-    private SessionDtos.SessionResponse toSessionResponse(AttendanceSession session) {
+    public SessionDtos.SessionResponse toSessionResponse(AttendanceSession session) {
         long count = attendanceRecordRepository.countBySessionId(session.getId());
         return new SessionDtos.SessionResponse(
                 session.getId(),
@@ -200,8 +226,25 @@ public class SessionService {
                 session.getStatus(),
                 session.getSessionType(),
                 session.getCreatedAt(),
+                session.getClosedAt(),
                 count
         );
+    }
+
+    private void closeAllActiveSessions(Long lecturerId) {
+        List<AttendanceSession> actives = sessionRepository.findByLecturerIdAndStatusOrderByCreatedAtDesc(
+                lecturerId, SessionStatus.ACTIVE);
+        if (actives.isEmpty()) {
+            return;
+        }
+        Instant now = Instant.now();
+        for (AttendanceSession session : actives) {
+            session.setStatus(SessionStatus.CLOSED);
+            if (session.getClosedAt() == null) {
+                session.setClosedAt(now);
+            }
+            sessionRepository.save(session);
+        }
     }
 
     static String hashToken(String token) {

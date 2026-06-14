@@ -6,6 +6,7 @@ import lombok.*;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "lecturers")
@@ -33,14 +34,9 @@ public class Lecturer {
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "lecturer_courses",
-            joinColumns = @JoinColumn(name = "lecturer_id"),
-            inverseJoinColumns = @JoinColumn(name = "course_id")
-    )
+    @OneToMany(mappedBy = "lecturer", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private Set<Course> courses = new HashSet<>();
+    private Set<LecturerCourse> courseLinks = new HashSet<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -50,5 +46,30 @@ public class Lecturer {
         if (createdAt == null) {
             createdAt = Instant.now();
         }
+    }
+
+    public Set<Course> getCourses() {
+        return courseLinks.stream()
+                .map(LecturerCourse::getCourse)
+                .collect(Collectors.toSet());
+    }
+
+    public boolean hasCourse(Course course) {
+        return courseLinks.stream()
+                .anyMatch(link -> link.getCourse().getId().equals(course.getId()));
+    }
+
+    public void linkCourse(Course course, boolean active) {
+        if (hasCourse(course)) {
+            return;
+        }
+        LecturerCourseId pk = new LecturerCourseId(this.id, course.getId());
+        LecturerCourse link = LecturerCourse.builder()
+                .id(pk)
+                .lecturer(this)
+                .course(course)
+                .active(active)
+                .build();
+        courseLinks.add(link);
     }
 }

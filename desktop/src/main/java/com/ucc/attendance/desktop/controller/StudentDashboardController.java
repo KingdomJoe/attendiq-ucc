@@ -54,36 +54,62 @@ public class StudentDashboardController {
 
     private void loadStudentDashboardData() {
         new Thread(() -> {
+            StringBuilder errors = new StringBuilder();
+
+            ApiClient.StudentStats stats = null;
             try {
-                ApiClient.StudentStats stats = ApiClient.getStudentStats();
-                List<ApiClient.CourseResponse> courses = ApiClient.getCourses();
-                List<ApiClient.CourseResponse> availCourses = ApiClient.getAvailableCourses();
-
-                Platform.runLater(() -> {
-                    myCourses = courses;
-                    availableCourses = availCourses;
-
-                    // Update stats labels
-                    totalSessionsLabel.setText(String.valueOf(stats.totalSessions()));
-                    attendedLabel.setText(String.valueOf(stats.attended()));
-                    missedLabel.setText(String.valueOf(stats.missed()));
-                    rateLabel.setText(stats.ratePercent() + "%");
-
-                    // Populate my courses
-                    enrolledCoursesListView.getItems().clear();
-                    for (ApiClient.CourseResponse c : courses) {
-                        enrolledCoursesListView.getItems().add(c.courseCode() + " — " + c.courseName());
-                    }
-
-                    // Populate available courses combobox
-                    availableCoursesComboBox.getItems().clear();
-                    for (ApiClient.CourseResponse c : availCourses) {
-                        availableCoursesComboBox.getItems().add(c.courseCode() + " — " + c.courseName());
-                    }
-                });
+                stats = ApiClient.getStudentStats();
             } catch (Exception e) {
-                Platform.runLater(() -> FxUtils.showError("Load Error", "Failed to load student dashboard:\n" + e.getMessage()));
+                errors.append("Stats: ").append(e.getMessage()).append("\n");
             }
+
+            List<ApiClient.CourseResponse> courses = List.of();
+            try {
+                courses = ApiClient.getCourses();
+            } catch (Exception e) {
+                errors.append("Enrolled courses: ").append(e.getMessage()).append("\n");
+            }
+
+            List<ApiClient.CourseResponse> availCourses = List.of();
+            try {
+                availCourses = ApiClient.getAvailableCourses();
+            } catch (Exception e) {
+                errors.append("Available courses: ").append(e.getMessage()).append("\n");
+            }
+
+            final ApiClient.StudentStats finalStats = stats;
+            final List<ApiClient.CourseResponse> finalCourses = courses;
+            final List<ApiClient.CourseResponse> finalAvail = availCourses;
+            final String errorText = errors.toString().trim();
+
+            Platform.runLater(() -> {
+                if (finalStats != null) {
+                    totalSessionsLabel.setText(String.valueOf(finalStats.totalSessions()));
+                    attendedLabel.setText(String.valueOf(finalStats.attended()));
+                    missedLabel.setText(String.valueOf(finalStats.missed()));
+                    rateLabel.setText(finalStats.ratePercent() + "%");
+                }
+
+                myCourses = finalCourses;
+                availableCourses = finalAvail;
+
+                enrolledCoursesListView.getItems().clear();
+                for (ApiClient.CourseResponse c : finalCourses) {
+                    enrolledCoursesListView.getItems().add(c.courseCode() + " — " + c.courseName());
+                }
+                if (enrolledCoursesListView.getItems().isEmpty()) {
+                    enrolledCoursesListView.setPlaceholder(new Label("No enrolled courses yet. Join one on the right."));
+                }
+
+                availableCoursesComboBox.getItems().clear();
+                for (ApiClient.CourseResponse c : finalAvail) {
+                    availableCoursesComboBox.getItems().add(c.courseCode() + " — " + c.courseName());
+                }
+
+                if (!errorText.isEmpty()) {
+                    FxUtils.showError("Load Error", "Some dashboard data could not be loaded:\n" + errorText);
+                }
+            });
         }).start();
     }
 

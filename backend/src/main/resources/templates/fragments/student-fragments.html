@@ -40,14 +40,20 @@
 
 <!-- Course List Fragment -->
 <th:block th:fragment="course-list">
-    <div th:if="${enrolledCourses != null and !enrolledCourses.isEmpty()}" class="course-grid">
-        <a th:each="course : ${enrolledCourses}"
-           th:href="@{'/student/course/' + ${course.id}}"
-           class="course-card">
-            <div class="course-code" th:text="${course.courseCode}">CSC302</div>
-            <div class="course-name" th:text="${course.courseName}">Data Structures</div>
-            <div class="course-dept" th:text="${course.departmentCode}">CS</div>
-        </a>
+    <div th:if="${enrolledCourses != null and !enrolledCourses.isEmpty()}" class="course-grid course-grid--student">
+        <div th:each="course : ${enrolledCourses}" class="course-card-enrolled">
+            <a th:href="@{'/student/course/' + ${course.id}}" class="course-card-enrolled__body">
+                <div class="course-code" th:text="${course.courseCode}">CSC302</div>
+                <div class="course-name" th:text="${course.courseName}">Data Structures</div>
+                <div class="course-dept" th:text="${course.departmentName}">Computer Science</div>
+                <div class="course-card-enrolled__hint text-xs text-muted">View attendance &rarr;</div>
+            </a>
+            <form th:action="@{'/student/courses/' + ${course.id} + '/leave'}" method="post"
+                  class="course-card-enrolled__leave"
+                  onsubmit="return confirm('Leave this course? Your attendance history is kept.');">
+                <button type="submit" class="btn btn-outline btn-sm course-leave-btn" title="Leave course">Leave</button>
+            </form>
+        </div>
     </div>
     <p th:if="${enrolledCourses == null || enrolledCourses.isEmpty()}" class="text-sm text-muted" style="padding:1rem 0;">
         You haven't enrolled in any courses yet. Join one below.

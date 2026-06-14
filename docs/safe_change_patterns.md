@@ -109,6 +109,9 @@ If `@FXML` fields are null at runtime, the most common cause is a mismatch betwe
 ### Pitfall 5: `Platform.runLater()` for UI Updates
 **All** JavaFX UI changes from background threads MUST go inside `Platform.runLater(() -> { ... })`. Missing this causes `IllegalStateException: Not on FX application thread`.
 
+### Pitfall 6: Thymeleaf `${session}` Model Attribute Name
+Never use `model.addAttribute("session", ...)` in Spring MVC + Thymeleaf. `${session}` is reserved for `HttpSession`. Use `attendanceSession`, `liveSession`, etc. This broke `/lecturer/session/{id}` (null header, failed QR fetch).
+
 ---
 
 ## Adding New Features — Checklist

@@ -1,50 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-2: 
-3: <?import javafx.scene.control.*?>
-4: <?import javafx.scene.layout.*?>
-5: 
-6: <HBox xmlns="http://javafx.com/javafx"
-7:       xmlns:fx="http://javafx.com/fxml"
-8:       fx:controller="com.ucc.attendance.desktop.controller.StudentHistoryController"
-9:       prefHeight="700"
-10:       prefWidth="1000"
-11:       style="-fx-background-color: #0f172a;">
-12: 
-13:     <!-- Sidebar Navigation -->
-14:     <VBox styleClass="sidebar" prefWidth="240" spacing="10">
-15:         <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
-16:         <Label text="Student Portal" styleClass="text-subtitle" />
-17:         
-18:         <Region prefHeight="30" />
-19: 
-20:         <Button text="🏠 Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
-21:         <Button text="📋 Attendance History" styleClass="nav-button, nav-button-active" />
-22:         
-23:         <Region VBox.vgrow="ALWAYS" />
-24:         
-25:         <Label fx:id="studentNameLabel" text="Student Name" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
-26:         <Label fx:id="studentIndexLabel" text="UCC/CS/001" styleClass="text-subtitle" style="-fx-font-size: 11px;" />
-27:         <Button text="🚪 Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
-28:     </VBox>
-29: 
-30:     <!-- Main Content Area -->
-31:     <VBox spacing="20" style="-fx-padding: 30;" HBox.hgrow="ALWAYS">
-32:         <!-- Header -->
-33:         <VBox>
-34:             <Label text="📋 Attendance History Log" styleClass="text-title" />
-35:             <Label text="Complete record of your verified attendance scans." styleClass="text-subtitle" />
-36:         </VBox>
-37: 
-38:         <!-- History Table -->
-39:         <VBox styleClass="card" spacing="10" VBox.vgrow="ALWAYS">
-40:             <TableView fx:id="historyTable" VBox.vgrow="ALWAYS">
-41:                 <columns>
-42:                     <TableColumn fx:id="courseCodeCol" text="Course Code" prefWidth="150" />
-43:                     <TableColumn fx:id="courseNameCol" text="Course Name" prefWidth="350" />
-44:                     <TableColumn fx:id="timeCol" text="Attendance Time" prefWidth="200" />
-45:                     <TableColumn fx:id="statusCol" text="Status" prefWidth="120" />
-46:                 </columns>
-47:             </TableView>
-48:         </VBox>
-49:     </VBox>
-50: </HBox>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.ucc.attendance.desktop.controller.StudentHistoryController"
+      prefHeight="700"
+      prefWidth="1000"
+      style="-fx-background-color: #0f172a;">
+
+    <VBox styleClass="sidebar" prefWidth="240" spacing="10">
+        <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
+        <Label text="Student Portal" styleClass="text-subtitle" />
+        <Region prefHeight="30" />
+        <Button text="Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
+        <Button text="Attendance History" styleClass="nav-button, nav-button-active" />
+        <Region VBox.vgrow="ALWAYS" />
+        <Label fx:id="studentNameLabel" text="Student Name" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
+        <Label fx:id="studentIndexLabel" text="UCC/CS/001" styleClass="text-subtitle" style="-fx-font-size: 11px;" />
+        <Button text="Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
+    </VBox>
+
+    <VBox spacing="20" style="-fx-padding: 30;" HBox.hgrow="ALWAYS">
+        <VBox spacing="5">
+            <Label text="Attendance History" styleClass="text-title" />
+            <Label text="Complete record of your verified attendance scans." styleClass="text-subtitle" />
+        </VBox>
+        <VBox styleClass="card" spacing="10" VBox.vgrow="ALWAYS">
+            <Label text="Attendance History" styleClass="card-title" />
+            <TableView fx:id="historyTable" VBox.vgrow="ALWAYS" styleClass="structured-table">
+                <columns>
+                    <TableColumn fx:id="courseCodeCol" text="Course Code" prefWidth="150" />
+                    <TableColumn fx:id="courseNameCol" text="Course Name" prefWidth="350" />
+                    <TableColumn fx:id="timeCol" text="Attendance Time" prefWidth="200" />
+                    <TableColumn fx:id="statusCol" text="Status" prefWidth="120" />
+                </columns>
+            </TableView>
+        </VBox>
+    </VBox>
+</HBox>

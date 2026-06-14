@@ -10,34 +10,54 @@
       prefWidth="1000"
       style="-fx-background-color: #0f172a;">
 
-    <!-- Sidebar Navigation -->
-    <VBox styleClass="sidebar" prefWidth="240" spacing="10">
+    <VBox styleClass="sidebar" spacing="10" HBox.hgrow="NEVER">
         <Label text="AttendIQ" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
         <Label text="Lecturer Panel" styleClass="text-subtitle" />
-        
         <Region prefHeight="30" />
-
-        <Button text="🏠 Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
-        <Button text="📚 Courses" styleClass="nav-button, nav-button-active" />
-        <Button text="📈 Analytics" onAction="#handleAnalyticsNav" styleClass="nav-button" />
-        
+        <Button text="Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
+        <Button text="Courses" styleClass="nav-button, nav-button-active" />
+        <Button text="Analytics" onAction="#handleAnalyticsNav" styleClass="nav-button" />
         <Region VBox.vgrow="ALWAYS" />
-        
-        <Label fx:id="lecturerLabel" text="Dr. Lecturer" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
-        <Button text="🚪 Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
+        <Label fx:id="lecturerLabel" text="Dr. Lecturer" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" wrapText="true" />
+        <Button text="Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
     </VBox>
 
-    <!-- Main Content Area -->
-    <HBox HBox.hgrow="ALWAYS" spacing="20" style="-fx-padding: 30;">
-        <!-- Left: Course List Table -->
-        <VBox spacing="20" HBox.hgrow="ALWAYS">
-            <VBox>
-                <Label text="My Assigned Courses" styleClass="text-title" />
-                <Label text="Double click a course to view details, students, and session history." styleClass="text-subtitle" />
+    <ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS" styleClass="content-scroll">
+        <HBox spacing="20" styleClass="content-pane">
+            <VBox spacing="20" HBox.hgrow="ALWAYS" minWidth="420">
+                <VBox spacing="5">
+                    <Label text="My Assigned Courses" styleClass="text-title" />
+                    <Label text="Double-click a course for details. Use Set Active to switch your focused course." styleClass="text-subtitle" wrapText="true" />
+                </VBox>
+                <TableView fx:id="coursesTable" VBox.vgrow="ALWAYS" minHeight="320" styleClass="structured-table">
+                    <columns>
+                        <TableColumn fx:id="codeCol" text="Course Code" prefWidth="100" minWidth="80" />
+                        <TableColumn fx:id="nameCol" text="Course Name" prefWidth="180" minWidth="120" />
+                        <TableColumn fx:id="deptCol" text="Department" prefWidth="130" minWidth="100" />
+                        <TableColumn fx:id="activeCol" text="Focus" prefWidth="85" minWidth="75" />
+                        <TableColumn fx:id="actionsCol" text="" prefWidth="100" minWidth="90" />
+                    </columns>
+                </TableView>
             </VBox>
 
-            <TableView fx:id="coursesTable" VBox.vgrow="ALWAYS">
-                <columns>
-                    <TableColumn fx:id="codeCol" text="Course Code" prefWidth="120" />
-                    <TableColumn fx:id="nameCol"
-<truncated 1486 bytes>
+            <VBox spacing="15" minWidth="280" prefWidth="300" maxWidth="320" styleClass="card">
+                <Label text="Assign Course" styleClass="card-title" />
+                <Label text="Select a department, then pick a course from the catalog to assign it to yourself." styleClass="text-subtitle" wrapText="true" />
+                <VBox spacing="5">
+                    <Label text="Department" styleClass="text-subtitle" />
+                    <ComboBox fx:id="departmentComboBox" promptText="Select department..." maxWidth="Infinity" />
+                </VBox>
+                <VBox spacing="5">
+                    <Label text="Course" styleClass="text-subtitle" />
+                    <ComboBox fx:id="assignableCourseComboBox" promptText="Select course..." maxWidth="Infinity" />
+                </VBox>
+                <VBox spacing="4" styleClass="assign-preview">
+                    <Label fx:id="previewCodeLabel" text="Course code: —" styleClass="text-subtitle" />
+                    <Label fx:id="previewNameLabel" text="Course name: —" styleClass="text-subtitle" wrapText="true" />
+                    <Label fx:id="previewDeptLabel" text="Department: —" styleClass="text-subtitle" wrapText="true" />
+                </VBox>
+                <Button fx:id="assignButton" text="Assign Course" styleClass="btn, btn-primary" maxWidth="Infinity" />
+            </VBox>
+        </HBox>
+    </ScrollPane>
+</HBox>

@@ -1,6 +1,8 @@
 package com.ucc.attendance.desktop;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -20,7 +22,9 @@ public class ApiClient {
     private static final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
-    private static final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private static final ObjectMapper mapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     // ── DTO Records for Desktop Client ───────────────────────────────────
 
@@ -30,12 +34,14 @@ public class ApiClient {
     public record AuthResponse(String token, String role, Long userId, String displayName) {}
     public record DepartmentResponse(String code, String name) {}
     
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record CourseResponse(
             Long id,
             String courseCode,
             String courseName,
             String departmentCode,
-            String departmentName
+            String departmentName,
+            boolean active
     ) {}
 
     public record CreateCourseRequest(
@@ -51,10 +57,12 @@ public class ApiClient {
             String indexNumber
     ) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public record CourseDetailResponse(
             CourseResponse course,
             List<StudentResponse> roster,
-            List<SessionResponse> sessions
+            List<SessionResponse> sessions,
+            String enrollmentUrl
     ) {}
 
     public record CreateSessionRequest(
@@ -70,6 +78,7 @@ public class ApiClient {
             String status,
             String sessionType,
             Instant createdAt,
+            Instant closedAt,
             long presentCount
     ) {}
 
@@ -169,7 +178,7 @@ public class ApiClient {
             if (node.has("message")) {
                 String msg = node.get("message").asText();
                 if (statusCode == 409) {
-                    return msg + ". Try signing in instead — you may have already registered via the web app.";
+                    return msg + ". Try signing in instead — use your email (students) or lecturer code, and select the correct role.";
                 }
                 return msg;
             }
@@ -379,5 +388,34 @@ public class ApiClient {
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new RuntimeException("Join course failed: " + getErrorMessage(response.body(), response.statusCode()));
         }
+    }
+
+    public static List<CourseResponse> getAssignableCourses(String departmentCode) throws Exception {
+        return safeExecute(() -> {
+            String path = "/courses/assignable";
+            if (departmentCode != null && !departmentCode.isBlank()) {
+                path += "?departmentCode=" + java.net.URLEncoder.encode(departmentCode, java.nio.charset.StandardCharsets.UTF_8);
+            }
+            HttpRequest request = requestBuilder(path).GET().build();
+            return sendRequest(request, new TypeReference<List<CourseResponse>>() {});
+        });
+    }
+
+    public static CourseResponse assignCourse(Long courseId) throws Exception {
+        return safeExecute(() -> {
+            HttpRequest request = requestBuilder("/courses/assign?courseId=" + courseId)
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+            return sendRequest(request, CourseResponse.class);
+        });
+    }
+
+    public static CourseResponse focusCourse(Long courseId) throws Exception {
+        return safeExecute(() -> {
+            HttpRequest request = requestBuilder("/courses/" + courseId + "/focus")
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+            return sendRequest(request, CourseResponse.class);
+        });
     }
 }

@@ -526,6 +526,347 @@ tbody tr:last-child td {
     margin-top: 0.375rem;
 }
 
+.course-card--managed {
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+}
+
+.course-card--active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px rgba(29, 158, 117, 0.15);
+}
+
+.course-card-top {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+}
+
+.course-card-link {
+    flex: 1;
+    text-decoration: none;
+    color: inherit;
+}
+
+.course-focus-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0.125rem;
+}
+
+.course-active-pill {
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-primary-hover);
+    background: var(--color-primary-light);
+    padding: 0.25rem 0.75rem;
+}
+
+.course-focus-form {
+    margin: 0;
+}
+
+.roster-row {
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.roster-row:hover,
+.roster-row--open {
+    background: var(--color-border-light);
+}
+
+.roster-expand-row.hidden {
+    display: none;
+}
+
+.attendance-expand-panel {
+    padding: 0.75rem 0;
+    animation: expandIn 0.25s ease-out;
+}
+
+.attendance-expand-row--opening .attendance-expand-panel {
+    animation: expandIn 0.25s ease-out;
+}
+
+@keyframes expandIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.attendance-expand-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.attendance-heatmap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.attendance-cell {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.attendance-cell--present {
+    background: var(--color-present-text);
+    border-color: rgba(59, 109, 17, 0.35);
+}
+
+.attendance-cell--absent {
+    background: #fca5a5;
+    border-color: #f87171;
+}
+
+.attendance-heatmap--lg .attendance-cell {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+}
+
+.attendance-heatmap--lg {
+    gap: 6px;
+    min-height: 3.5rem;
+    padding: 0.25rem 0;
+}
+
+.attendance-legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.attendance-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+}
+
+.card--attendance-sessions {
+    min-height: 12rem;
+}
+
+.course-grid--student {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.course-card-enrolled {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    overflow: hidden;
+    min-height: 9rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.course-card-enrolled:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.course-card-enrolled__body {
+    flex: 1;
+    padding: 1rem 1rem 0.5rem;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.course-card-enrolled__body .course-code {
+    font-size: 1rem;
+}
+
+.course-card-enrolled__body .course-name {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.course-card-enrolled__hint {
+    margin-top: 0.75rem;
+}
+
+.course-card-enrolled__leave {
+    padding: 0.5rem 1rem 0.875rem;
+    margin: 0;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.course-leave-btn {
+    width: 100%;
+    color: var(--color-absent-text);
+    border-color: #fecaca;
+}
+
+.course-leave-btn:hover {
+    background: var(--color-absent-bg);
+    border-color: #fca5a5;
+    color: var(--color-absent-text);
+}
+
+.available-courses-section {
+    border-top: 1px solid var(--color-border);
+    padding-top: 1.25rem;
+}
+
+.available-courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+}
+
+.available-course-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 0.875rem 1rem;
+    background: var(--color-border-light);
+    margin: 0;
+}
+
+.available-course-card__join {
+    align-self: flex-start;
+}
+
+.course-classroom-page {
+    padding-bottom: 2rem;
+}
+
+.course-classroom-top {
+    margin-bottom: 1rem;
+}
+
+.course-classroom-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.course-classroom-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.course-classroom-meta {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 0.125rem;
+}
+
+.card--classroom {
+    padding-top: 1rem;
+}
+
+.card-title--compact {
+    margin-bottom: 0.25rem;
+    font-size: 1rem;
+}
+
+.classroom-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.enroll-link-toolbar {
+    min-width: min(100%, 20rem);
+    text-align: right;
+}
+
+.enroll-link-toolbar__row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.form-input--compact {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.5rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.table-container--structured {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.table-structured {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-structured thead {
+    background: var(--color-border-light);
+}
+
+.table-structured th,
+.table-structured td {
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+
+.table-structured th {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+}
+
+.table-structured tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-structured tbody tr.roster-row:hover {
+    background: #f1f5f9;
+}
+
+.table-empty-cell {
+    padding: 2rem 1rem !important;
+}
+
+.enroll-link-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.enroll-link-row .form-input {
+    flex: 1;
+    min-width: 12rem;
+}
+
 /* ── Login Page ────────────────────────────────────────────── */
 .login-wrapper {
     min-height: 100vh;

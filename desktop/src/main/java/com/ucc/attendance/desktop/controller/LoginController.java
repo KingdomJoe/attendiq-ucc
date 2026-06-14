@@ -148,7 +148,9 @@ public class LoginController {
                 Platform.runLater(() -> {
                     loginButton.setDisable(false);
                     SessionManager.setSession(res.token(), res.displayName(), identifier, role);
-                    App.showDashboard();
+                    if (!App.showDashboard()) {
+                        SessionManager.clearSession();
+                    }
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> {

@@ -24,6 +24,7 @@ public final class SessionDtos {
             SessionStatus status,
             SessionType sessionType,
             Instant createdAt,
+            Instant closedAt,
             long presentCount
     ) {}
 

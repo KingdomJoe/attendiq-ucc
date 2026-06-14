@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,6 +27,7 @@ public class StatsService {
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
     private final LecturerRepository lecturerRepository;
+    private final CourseService courseService;
 
     public StatsDtos.LecturerStats lecturerStats(Long sessionId) {
         UserPrincipal lecturer = SecurityUtils.requireRole(UserRole.LECTURER);
@@ -47,12 +50,23 @@ public class StatsService {
     }
 
     private StatsDtos.LecturerStats buildLecturerOverallStats(Long lecturerId) {
-        List<Course> courses = courseRepository.findByLecturerId(lecturerId);
+        Optional<Course> focused = courseService.findFocusedCourse(lecturerId);
+        List<Course> courses = focused.map(List::of)
+                .orElseGet(() -> courseRepository.findByLecturerId(lecturerId));
+
+        if (courses.isEmpty()) {
+            return new StatsDtos.LecturerStats(0, 0, 0, 0, null, null);
+        }
+
         long enrolled = courses.stream()
                 .mapToLong(c -> studentRepository.findByCourseId(c.getId()).size())
                 .sum();
 
-        List<AttendanceSession> sessions = sessionRepository.findByLecturerIdOrderByCreatedAtDesc(lecturerId);
+        Set<Long> courseIds = courses.stream().map(Course::getId).collect(java.util.stream.Collectors.toSet());
+        List<AttendanceSession> sessions = sessionRepository.findByLecturerIdOrderByCreatedAtDesc(lecturerId).stream()
+                .filter(s -> courseIds.contains(s.getCourse().getId()))
+                .toList();
+
         long totalPresent = 0;
         long totalSlots = 0;
 
@@ -66,13 +80,14 @@ public class StatsService {
         long absent = Math.max(0, totalSlots - totalPresent);
         int rate = totalSlots == 0 ? 0 : (int) Math.round((totalPresent * 100.0) / totalSlots);
 
+        Course focus = focused.orElse(courses.get(0));
         return new StatsDtos.LecturerStats(
                 enrolled,
                 totalPresent,
                 absent,
                 rate,
                 null,
-                null
+                focus.getCourseCode()
         );
     }
 

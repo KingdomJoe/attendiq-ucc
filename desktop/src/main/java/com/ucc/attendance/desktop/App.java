@@ -1,5 +1,6 @@
 package com.ucc.attendance.desktop;
 
+import com.ucc.attendance.desktop.util.FxUtils;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -29,7 +30,7 @@ public class App extends Application {
     /**
      * Navigate to a new scene by loading an FXML file.
      */
-    public static void navigateTo(String fxmlFile, String title) {
+    public static boolean navigateTo(String fxmlFile, String title) {
         try {
             FXMLLoader loader = new FXMLLoader(App.class.getResource("/fxml/" + fxmlFile));
             Parent root = loader.load();
@@ -37,8 +38,13 @@ public class App extends Application {
             scene.getStylesheets().add(App.class.getResource("/css/style.css").toExternalForm());
             primaryStage.setScene(scene);
             primaryStage.setTitle("AttendIQ — " + title);
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            FxUtils.showError("Navigation Error",
+                    "Could not load screen: " + fxmlFile + "\n\n" + cause.getMessage());
+            return false;
         }
     }
 
@@ -53,12 +59,11 @@ public class App extends Application {
         navigateTo("login.fxml", "Login");
     }
 
-    public static void showDashboard() {
+    public static boolean showDashboard() {
         if ("STUDENT".equals(SessionManager.getUserRole())) {
-            navigateTo("student-dashboard.fxml", "Student Dashboard");
-        } else {
-            navigateTo("dashboard.fxml", "Lecturer Dashboard");
+            return navigateTo("student-dashboard.fxml", "Student Dashboard");
         }
+        return navigateTo("dashboard.fxml", "Lecturer Dashboard");
     }
 
     public static Stage getPrimaryStage() {

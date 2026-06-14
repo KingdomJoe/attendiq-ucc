@@ -25,4 +25,14 @@ public class Course {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
+
+    @Column(name = "enrollment_token", nullable = false, unique = true, length = 64)
+    private String enrollmentToken;
+
+    @PrePersist
+    void prePersist() {
+        if (enrollmentToken == null) {
+            enrollmentToken = java.util.UUID.randomUUID().toString().replace("-", "");
+        }
+    }
 }

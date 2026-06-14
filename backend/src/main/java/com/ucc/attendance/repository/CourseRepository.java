@@ -14,8 +14,13 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     @Query("SELECT c FROM Course c JOIN c.department d ORDER BY c.courseCode")
     List<Course> findAllOrdered();
 
-    @Query("SELECT c FROM Lecturer l JOIN l.courses c WHERE l.id = :lecturerId")
+    @Query("SELECT lc.course FROM LecturerCourse lc WHERE lc.lecturer.id = :lecturerId ORDER BY lc.course.courseCode")
     List<Course> findByLecturerId(Long lecturerId);
+
+    @Query("SELECT c FROM Course c JOIN c.department d WHERE d.code = :departmentCode ORDER BY c.courseCode")
+    List<Course> findByDepartmentCodeOrderByCourseCode(String departmentCode);
+
+    Optional<Course> findByEnrollmentToken(String enrollmentToken);
 
     @Query("SELECT c FROM Student s JOIN s.courses c WHERE s.id = :studentId")
     List<Course> findByStudentId(Long studentId);

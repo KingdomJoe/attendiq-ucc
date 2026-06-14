@@ -12,7 +12,8 @@ public final class CourseDtos {
             String courseCode,
             String courseName,
             String departmentCode,
-            String departmentName
+            String departmentName,
+            boolean active
     ) {}
 
     public record CreateCourseRequest(
@@ -31,6 +32,21 @@ public final class CourseDtos {
     public record CourseDetailResponse(
             CourseResponse course,
             List<StudentResponse> roster,
-            List<SessionDtos.SessionResponse> sessions
+            List<SessionDtos.SessionResponse> sessions,
+            String enrollmentUrl
+    ) {}
+
+    public record AttendanceCell(
+            Long sessionId,
+            java.time.Instant sessionDate,
+            boolean present
+    ) {}
+
+    public record StudentAttendanceGrid(
+            Long studentId,
+            String studentName,
+            List<AttendanceCell> sessions,
+            long presentCount,
+            long totalSessions
     ) {}
 }

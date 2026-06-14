@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: ucc-attendance
+  thymeleaf:
+    cache: false
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ucc_attendance}
     username: ${SPRING_DATASOURCE_USERNAME:ucc}
@@ -21,6 +23,7 @@ spring:
     locations: classpath:db/migration
 
 app:
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
   jwt:
     secret: ${JWT_SECRET:dev-jwt-secret-change-in-production-min-32-chars!!}
     expiry-minutes: 480

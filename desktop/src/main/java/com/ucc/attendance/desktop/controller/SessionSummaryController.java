@@ -3,19 +3,13 @@ package com.ucc.attendance.desktop.controller;
 import com.ucc.attendance.desktop.ApiClient;
 import com.ucc.attendance.desktop.App;
 import com.ucc.attendance.desktop.SessionManager;
+import com.ucc.attendance.desktop.util.CsvExportHelper;
 import com.ucc.attendance.desktop.util.FxUtils;
+import com.ucc.attendance.desktop.util.TableColumns;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.stage.FileChooser;
-
-import java.io.File;
-import java.io.FileOutputStream;
+import javafx.scene.control.*;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -41,10 +35,16 @@ public class SessionSummaryController {
     public void initialize() {
         lecturerLabel.setText(SessionManager.getLecturerName());
 
-        indexCol.setCellValueFactory(new PropertyValueFactory<>("indexNumber"));
-        nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        TableColumns.text(indexCol, ApiClient.AttendanceRow::indexNumber);
+        TableColumns.text(nameCol, ApiClient.AttendanceRow::name);
 
-        statusCol.setCellValueFactory(new PropertyValueFactory<>("present"));
+        statusCol.setCellValueFactory(cellData -> {
+            ApiClient.AttendanceRow row = cellData.getValue();
+            if (row == null) {
+                return new javafx.beans.property.SimpleObjectProperty<>(null);
+            }
+            return new javafx.beans.property.SimpleObjectProperty<>(row.present());
+        });
         statusCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Boolean present, boolean empty) {
@@ -65,8 +65,10 @@ public class SessionSummaryController {
         });
 
         timeCol.setCellValueFactory(cellData -> {
+            if (cellData.getValue() == null || cellData.getValue().attendanceTime() == null) {
+                return new javafx.beans.property.SimpleStringProperty("-");
+            }
             Instant time = cellData.getValue().attendanceTime();
-            if (time == null) return new javafx.beans.property.SimpleStringProperty("-");
             String formatted = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                     .withZone(ZoneId.systemDefault())
                     .format(time);
@@ -110,25 +112,7 @@ public class SessionSummaryController {
 
     @FXML
     private void handleExportCsv() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Save Attendance Report");
-        fileChooser.setInitialFileName("attendance-" + courseCode + "-session-" + sessionId + ".csv");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files (*.csv)", "*.csv"));
-        
-        File file = fileChooser.showSaveDialog(App.getPrimaryStage());
-        if (file == null) return; // user cancelled
-
-        new Thread(() -> {
-            try {
-                byte[] csvBytes = ApiClient.downloadAttendanceCsv(sessionId);
-                try (FileOutputStream out = new FileOutputStream(file)) {
-                    out.write(csvBytes);
-                }
-                Platform.runLater(() -> FxUtils.showInfo("Export Successful", "Attendance report saved successfully to:\n" + file.getAbsolutePath()));
-            } catch (Exception e) {
-                Platform.runLater(() -> FxUtils.showError("Export Failed", "Could not export CSV:\n" + e.getMessage()));
-            }
-        }).start();
+        CsvExportHelper.exportSessionCsv(sessionId, courseCode, App.getPrimaryStage());
     }
 
     @FXML

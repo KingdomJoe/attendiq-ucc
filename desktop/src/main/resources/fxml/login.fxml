@@ -7,33 +7,91 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.ucc.attendance.desktop.controller.LoginController"
       alignment="CENTER"
-      spacing="20"
+      spacing="16"
       prefHeight="700"
       prefWidth="1000"
       style="-fx-background-color: #0f172a;">
 
-    <VBox alignment="CENTER" spacing="10" maxWidth="400" styleClass="card">
+    <fx:define>
+        <ToggleGroup fx:id="roleGroup"/>
+        <ToggleGroup fx:id="loginRoleGroup"/>
+    </fx:define>
+
+    <VBox alignment="CENTER" spacing="16" maxWidth="440" styleClass="card">
         <Label text="AttendIQ" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
-        <Label text="Lecturer Panel Login" styleClass="text-subtitle" />
-        
-        <Region prefHeight="10" />
+        <Label text="Smart Attendance System" styleClass="text-subtitle" />
+        <Label fx:id="statusLabel" text="Connecting..." styleClass="text-subtitle" style="-fx-font-size: 11px;" />
 
-        <VBox alignment="CENTER_LEFT" spacing="5">
-            <Label text="Lecturer Code or Email" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;" />
-            <TextField fx:id="usernameField" promptText="e.g. LEC001" prefWidth="300" />
+        <HBox spacing="8" alignment="CENTER" styleClass="toggle-tab-bar">
+            <ToggleButton text="Sign In" fx:id="signInTab" toggleGroup="$roleGroup" selected="true" styleClass="toggle-tab"/>
+            <ToggleButton text="Student Register" fx:id="studentRegisterTab" toggleGroup="$roleGroup" styleClass="toggle-tab"/>
+            <ToggleButton text="Lecturer Register" fx:id="lecturerRegisterTab" toggleGroup="$roleGroup" styleClass="toggle-tab"/>
+        </HBox>
+
+        <Label fx:id="errorLabel" wrapText="true" maxWidth="400" style="-fx-text-fill: #ef4444; -fx-font-size: 13px;" visible="false"/>
+        <Label fx:id="successLabel" wrapText="true" maxWidth="400" style="-fx-text-fill: #22c55e; -fx-font-size: 13px;" visible="false"/>
+
+        <!-- Sign In -->
+        <VBox fx:id="signInPane" spacing="12" prefWidth="400">
+            <HBox spacing="16" alignment="CENTER" styleClass="role-radio-group">
+                <RadioButton text="Lecturer" fx:id="loginAsLecturer" toggleGroup="$loginRoleGroup" selected="true" styleClass="role-radio"/>
+                <RadioButton text="Student" fx:id="loginAsStudent" toggleGroup="$loginRoleGroup" styleClass="role-radio"/>
+            </HBox>
+            <VBox spacing="5">
+                <Label fx:id="identifierLabel" text="Lecturer Code" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <TextField fx:id="loginIdentifierField" promptText="e.g. UCC-LEC-A7X9" prefWidth="400"/>
+            </VBox>
+            <VBox spacing="5">
+                <Label text="Password" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <PasswordField fx:id="loginPasswordField" prefWidth="400"/>
+            </VBox>
+            <Button fx:id="loginButton" text="Sign In" onAction="#handleLogin" styleClass="btn, btn-primary" prefWidth="400"/>
         </VBox>
 
-        <VBox alignment="CENTER_LEFT" spacing="5">
-            <Label text="Password" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;" />
-            <PasswordField fx:id="passwordField" promptText="*********" prefWidth="300" />
+        <!-- Student Register -->
+        <VBox fx:id="studentRegisterPane" spacing="12" prefWidth="400" visible="false" managed="false">
+            <VBox spacing="5">
+                <Label text="Full Name" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <TextField fx:id="studentNameField" promptText="Enter your full name" prefWidth="400"/>
+            </VBox>
+            <VBox spacing="5">
+                <Label text="Email" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <TextField fx:id="studentEmailField" promptText="your.email@ucc.edu.gh" prefWidth="400"/>
+            </VBox>
+            <VBox spacing="5">
+                <Label text="Index Number" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <TextField fx:id="studentIndexField" promptText="e.g. UCC/CS/0001/2023" prefWidth="400"/>
+            </VBox>
+            <VBox spacing="5">
+                <Label text="Department" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <ComboBox fx:id="studentDeptCombo" promptText="Select department" prefWidth="400"/>
+            </VBox>
+            <VBox spacing="5">
+                <Label text="Password" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <PasswordField fx:id="studentPasswordField" prefWidth="400"/>
+            </VBox>
+            <Button fx:id="studentRegisterButton" text="Register" onAction="#handleStudentRegister" styleClass="btn, btn-primary" prefWidth="400"/>
         </VBox>
 
-        <Region prefHeight="5" />
-
-        <Label fx:id="errorLabel" wrapText="true" style="-fx-text-fill: #ef4444; -fx-font-size: 13px;" visible="false" />
-
-        <Region prefHeight="5" />
-
-        <Button fx:id="loginButton" text="Sign In" onAction="#handleLogin" styleClass="btn, btn-primary" prefWidth="300" />
+        <!-- Lecturer Register -->
+        <VBox fx:id="lecturerRegisterPane" spacing="12" prefWidth="400" visible="false" managed="false">
+            <VBox spacing="5">
+                <Label text="Full Name" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <TextField fx:id="lecturerNameField" promptText="Enter your full name" prefWidth="400"/>
+            </VBox>
+            <VBox spacing="5">
+                <Label text="Lecturer Code" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <TextField fx:id="lecturerCodeField" promptText="e.g. UCC-LEC-A7X9" prefWidth="400"/>
+            </VBox>
+            <VBox spacing="5">
+                <Label text="Department" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <ComboBox fx:id="lecturerDeptCombo" promptText="Select department" prefWidth="400"/>
+            </VBox>
+            <VBox spacing="5">
+                <Label text="Password" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <PasswordField fx:id="lecturerPasswordField" prefWidth="400"/>
+            </VBox>
+            <Button fx:id="lecturerRegisterButton" text="Register" onAction="#handleLecturerRegister" styleClass="btn, btn-primary" prefWidth="400"/>
+        </VBox>
     </VBox>
 </VBox>

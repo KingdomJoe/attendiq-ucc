@@ -33,6 +33,9 @@
     -fx-background-color: #1e293b; /* Slate 800 */
     -fx-padding: 20;
     -fx-spacing: 15;
+    -fx-min-width: 240;
+    -fx-pref-width: 240;
+    -fx-max-width: 240;
 }
 
 .sidebar-title {
@@ -50,7 +53,9 @@
     -fx-padding: 10 15 10 15;
     -fx-background-radius: 8;
     -fx-cursor: hand;
+    -fx-min-width: 200;
     -fx-pref-width: 200;
+    -fx-max-width: 200;
 }
 
 .nav-button:hover {
@@ -251,9 +256,257 @@
     -fx-padding: 8 16;
     -fx-background-radius: 6;
     -fx-cursor: hand;
+    -fx-border-color: transparent;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+}
+
+.toggle-tab:hover {
+    -fx-background-color: #334155;
+    -fx-text-fill: #e2e8f0;
 }
 
 .toggle-tab:selected {
     -fx-background-color: #0284c7;
     -fx-text-fill: white;
+    -fx-border-color: #38bdf8;
+}
+
+.toggle-tab-bar {
+    -fx-background-color: #0f172a;
+    -fx-background-radius: 8;
+    -fx-padding: 4;
+}
+
+/* Radio buttons (login role selection) */
+.role-radio-group {
+    -fx-padding: 4 0 8 0;
+}
+
+.role-radio {
+    -fx-text-fill: #e2e8f0;
+    -fx-font-size: 14px;
+}
+
+.role-radio .radio {
+    -fx-background-color: #334155;
+    -fx-border-color: #64748b;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.role-radio:selected .radio .dot {
+    -fx-background-color: #38bdf8;
+}
+
+.role-radio .label {
+    -fx-text-fill: #e2e8f0;
+}
+
+/* Main content scroll areas */
+.content-scroll {
+    -fx-background-color: #0f172a;
+    -fx-background: #0f172a;
+    -fx-border-color: transparent;
+}
+
+.content-scroll > .viewport {
+    -fx-background-color: #0f172a;
+}
+
+.content-pane {
+    -fx-background-color: #0f172a;
+    -fx-padding: 30;
+}
+
+/* List views */
+.dark-list, .list-view {
+    -fx-background-color: #0f172a;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: #334155;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.list-view .list-cell {
+    -fx-background-color: #0f172a;
+    -fx-text-fill: #e2e8f0;
+    -fx-padding: 10 12;
+    -fx-font-size: 14px;
+}
+
+.list-view .list-cell:empty {
+    -fx-background-color: #0f172a;
+}
+
+.list-view .list-cell:filled:hover {
+    -fx-background-color: #1e293b;
+}
+
+.list-view .list-cell:filled:selected {
+    -fx-background-color: #334155;
+    -fx-text-fill: #f8fafc;
+}
+
+.list-view .placeholder .label {
+    -fx-text-fill: #94a3b8;
+}
+
+/* Combo box dropdown */
+.combo-box .list-cell {
+    -fx-text-fill: #f8fafc;
+    -fx-background-color: #334155;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #1e293b;
+    -fx-border-color: #475569;
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: #e2e8f0;
+}
+
+.combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: #334155;
+}
+
+/* Table empty state */
+.table-view .placeholder .label {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 13px;
+}
+
+.dark-table {
+    -fx-fixed-cell-size: 40;
+}
+
+/* Login card contrast */
+.login-card {
+    -fx-background-color: #1e293b;
+}
+
+/* Structured data tables */
+.structured-table {
+    -fx-background-color: #0f172a;
+    -fx-border-color: #334155;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+}
+
+.structured-table .column-header-background {
+    -fx-background-color: #1e293b;
+    -fx-background-radius: 10 10 0 0;
+}
+
+.structured-table .column-header {
+    -fx-border-color: transparent transparent #475569 transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 12 10;
+}
+
+.structured-table .table-row-cell:odd:filled {
+    -fx-background-color: #111827;
+}
+
+.structured-table .table-row-cell:even:filled {
+    -fx-background-color: #0f172a;
+}
+
+.structured-table .table-row-cell:filled:selected {
+    -fx-background-color: #1d4ed8;
+}
+
+.structured-table .table-cell {
+    -fx-padding: 10 12;
+    -fx-border-color: transparent transparent #1e293b transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+/* Analytics course filter chips */
+.course-chip {
+    -fx-background-color: #334155;
+    -fx-text-fill: #cbd5e1;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 14;
+    -fx-background-radius: 16;
+    -fx-cursor: hand;
+}
+
+.course-chip:selected {
+    -fx-background-color: #0284c7;
+    -fx-text-fill: white;
+}
+
+.course-chip:hover {
+    -fx-background-color: #475569;
+}
+
+.status-neutral {
+    -fx-background-color: #475569;
+    -fx-text-fill: #e2e8f0;
+    -fx-background-radius: 12;
+    -fx-padding: 2 10;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.assign-preview {
+    -fx-background-color: #0f172a;
+    -fx-background-radius: 8;
+    -fx-padding: 12;
+    -fx-border-color: #334155;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+}
+
+.analytics-chart .chart-title {
+    -fx-text-fill: #cbd5e1;
+}
+
+.analytics-chart .chart-bar {
+    -fx-bar-fill: #38bdf8;
+}
+
+.sessions-table .table-row-cell {
+    -fx-cell-size: 38px;
+}
+
+.sessions-table .table-cell {
+    -fx-alignment: center-left;
+}
+
+.table-action-link {
+    -fx-text-fill: #38bdf8;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent;
+    -fx-underline: true;
+    -fx-padding: 2 4;
+}
+
+.table-action-link:hover {
+    -fx-text-fill: #7dd3fc;
+}
+
+.table-action-link:visited {
+    -fx-text-fill: #38bdf8;
+}
+
+.qr-fullscreen-root {
+    -fx-background-color: #0f172a;
+}
+
+.qr-stage {
+    -fx-background-color: #0f172a;
+    -fx-padding: 40;
+    -fx-alignment: center;
+}
+
+.qr-fullscreen-image {
+    -fx-effect: dropshadow(three-pass-box, rgba(56, 189, 248, 0.25), 30, 0, 0, 0);
 }
