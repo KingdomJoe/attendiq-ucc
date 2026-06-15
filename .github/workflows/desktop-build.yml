@@ -86,21 +86,15 @@ jobs:
             2. Ensure **Java 17** (or later) is installed on your Windows machine
             3. Double-click the JAR, or run: `java -jar attendance-desktop-*.jar`
 
-            ### ⚙️ Configuration
-            By default the desktop app connects to `http://localhost:8080`.
-            To point at a remote server, set the environment variable or system property:
+            ### ⚙️ Server
+            Connects to **https://ucc-attendance-system.onrender.com** (production).
+            For local development only:
             ```
-            set API_URL=https://your-server.com
+            set ATTENDIQ_DEV=true
             java -jar attendance-desktop-*.jar
             ```
-            or
-            ```
-            java -Dapi.url=https://your-server.com -jar attendance-desktop-*.jar
-            ```
+            or `java -Dapi.url=http://localhost:8080 -jar attendance-desktop-*.jar`
 
-            ### 🔑 Who is this for?
-            - **Lecturers** — manage courses, start attendance sessions, view QR codes, export CSVs
-            - **Students** — can also sign in to view their attendance history
-
-            > The web app for students is available at your institution's deployment URL.
+            ### 🌐 Web app (students)
+            https://ucc-attendance-system.onrender.com
           files: release-assets/*.jar

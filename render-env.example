@@ -1,0 +1,18 @@
+# Render production environment variables
+# Dashboard: https://dashboard.render.com → your Web Service → Environment
+
+# ── Required (you already have most of these) ──────────────────────────
+SPRING_DATASOURCE_URL=          # Render Postgres internal URL
+SPRING_DATASOURCE_USERNAME=     # From Render Postgres
+SPRING_DATASOURCE_PASSWORD=     # From Render Postgres
+JWT_SECRET=                     # Random string, 32+ characters
+
+# ── ADD THIS — missing from current Render config ────────────────────
+APP_PUBLIC_BASE_URL=https://ucc-attendance-system.onrender.com
+
+# ── CORS — set to your public web URL ────────────────────────────────
+APP_CORS_ORIGINS=https://ucc-attendance-system.onrender.com
+
+# ── Optional ─────────────────────────────────────────────────────────
+# STUDENT_EMAIL_PATTERN=.*@ucc\.edu\.gh
+# PORT is injected automatically by Render (application.yml uses ${PORT:8080})

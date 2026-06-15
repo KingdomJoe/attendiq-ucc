@@ -39,7 +39,7 @@ The single `backend` module serves **two entirely different clients**:
 - Public endpoints: `/auth/**`, `/departments`, `/`, `/login`, `/register/**`, `/logout`, `/lecturer-download`, `/error`, all static assets + PWA files
 
 ### Desktop (JavaFX) HTTP Client
-- `ApiClient.java` — `java.net.http.HttpClient`, pure JSON REST calls to `http://localhost:8080` (override with `-Dapi.url=<URL>` or `$API_URL`)
+- `ApiClient.java` — REST calls to production `https://ucc-attendance-system.onrender.com` (see `api.properties` / `ApiConfig.java`). Local dev: `mvn javafx:run -pl desktop` passes `-Dapi.url=http://localhost:8080`, or set `ATTENDIQ_DEV=true`.
 - `SessionManager.java` — static in-memory session state (JWT token, display name, identifier, role)
 - `App.java` — JavaFX `Application` subclass, provides static `navigateTo()`, `showLogin()`, `showDashboard()`
 - `Launcher.java` — separate entry point that calls `Application.launch(App.class, args)` (required for non-modular JavaFX fat-jar)

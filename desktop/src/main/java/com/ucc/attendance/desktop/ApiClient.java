@@ -17,8 +17,7 @@ import java.time.Instant;
 import java.util.List;
 
 public class ApiClient {
-    private static final String BASE_URL = System.getProperty("api.url", 
-            System.getenv("API_URL") != null ? System.getenv("API_URL") : "http://localhost:8080");
+    private static final String BASE_URL = ApiConfig.resolveBaseUrl();
     private static final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();

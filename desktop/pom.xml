@@ -62,6 +62,9 @@
                 <version>0.0.8</version>
                 <configuration>
                     <mainClass>com.ucc.attendance.desktop.Launcher</mainClass>
+                    <options>
+                        <option>-Dapi.url=http://localhost:8080</option>
+                    </options>
                 </configuration>
             </plugin>
             <plugin>
