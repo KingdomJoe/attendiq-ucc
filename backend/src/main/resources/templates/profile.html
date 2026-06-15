@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{layout :: html_head('Profile')}"></head>
+<body>
+
+<div th:replace="~{layout :: app_nav(~{::#nav-chip})}">
+    <span id="nav-chip" class="chip">
+        <span th:if="${user.role.name() == 'STUDENT'}">&#x1F393; Student Portal</span>
+        <span th:if="${user.role.name() == 'LECTURER'}">&#x1F4FC; Lecturer Portal</span>
+    </span>
+</div>
+
+<main class="page-container">
+    <div class="card" style="max-width: 32rem; margin: 2rem auto;">
+        <h1 class="card-title">Edit Profile</h1>
+        <p class="text-subtitle" style="margin-bottom: 1.5rem;">
+            Signed in as
+            <strong th:text="${user.emailOrCode}">user@ucc.edu.gh</strong>
+            <span th:if="${user.indexNumber != null}"> · <span th:text="${user.indexNumber}">UCC/CS/001</span></span>
+        </p>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+        <form th:action="@{/profile}" th:object="${profileForm}" method="post">
+            <div class="form-group">
+                <label class="form-label" for="name">Display name</label>
+                <input type="text" id="name" th:field="*{name}" class="form-input" required>
+                <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="field-error"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="currentPassword">Current password</label>
+                <input type="password" id="currentPassword" th:field="*{currentPassword}" class="form-input" placeholder="Required only when changing password" autocomplete="current-password">
+                <p th:if="${#fields.hasErrors('currentPassword')}" th:errors="*{currentPassword}" class="field-error"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="newPassword">New password</label>
+                <input type="password" id="newPassword" th:field="*{newPassword}" class="form-input" placeholder="Leave blank to keep current password" autocomplete="new-password">
+                <p th:if="${#fields.hasErrors('newPassword')}" th:errors="*{newPassword}" class="field-error"></p>
+            </div>
+            <div class="form-actions" style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+                <button type="submit" class="btn btn-primary">Save changes</button>
+                <a th:href="${user.role.name() == 'STUDENT'} ? @{/student} : @{/lecturer}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+</body>
+</html>

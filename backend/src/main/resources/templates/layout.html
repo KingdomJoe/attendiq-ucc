@@ -21,6 +21,9 @@
             <!-- Custom Context Chip -->
             <div th:replace="${chip != null} ? ${chip} : ~{}"></div>
 
+            <!-- Profile Link -->
+            <a th:if="${chip != null}" href="/profile" class="btn-logout" style="margin-right: 0.75rem;">Profile</a>
+
             <!-- Logout Link -->
             <a th:if="${chip != null}" href="/logout" class="btn-logout">
                 &#x2192; Logout

@@ -10,6 +10,9 @@ import javafx.scene.layout.VBox;
 
 import java.util.List;
 
+/**
+ * Login, registration, and department selection for students and lecturers.
+ */
 public class LoginController {
 
     // ── Shared UI ───────────────────────────────────────

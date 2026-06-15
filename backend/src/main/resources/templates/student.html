@@ -89,7 +89,10 @@
         <!-- Right Card: Attendance History -->
         <div class="card">
             <h2 class="card-title">&#x1F4CB; Attendance History</h2>
-
+            <div class="form-group mb-3">
+                <label class="form-label" for="history-search">Search history</label>
+                <input type="search" id="history-search" class="form-input" placeholder="Filter by course code, name, or date…" autocomplete="off">
+            </div>
             <div class="table-container">
                 <table>
                     <thead>
@@ -99,7 +102,7 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="history-tbody">
                         <tr th:replace="~{fragments/student-fragments :: history-rows}"></tr>
                     </tbody>
                 </table>
@@ -260,6 +263,20 @@
             el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     }
+
+    (function () {
+        var searchInput = document.getElementById("history-search");
+        var tbody = document.getElementById("history-tbody");
+        if (!searchInput || !tbody) return;
+        searchInput.addEventListener("input", function () {
+            var q = searchInput.value.trim().toLowerCase();
+            var rows = tbody.querySelectorAll("tr");
+            for (var i = 0; i < rows.length; i++) {
+                var text = rows[i].textContent.toLowerCase();
+                rows[i].style.display = !q || text.indexOf(q) !== -1 ? "" : "none";
+            }
+        });
+    })();
 </script>
 
 </body>

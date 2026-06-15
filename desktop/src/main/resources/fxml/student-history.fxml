@@ -16,6 +16,7 @@
         <Region prefHeight="30" />
         <Button text="Dashboard" onAction="#handleDashboardNav" styleClass="nav-button" />
         <Button text="Attendance History" styleClass="nav-button, nav-button-active" />
+        <Button text="Profile" onAction="#handleProfile" styleClass="nav-button" />
         <Region VBox.vgrow="ALWAYS" />
         <Label fx:id="studentNameLabel" text="Student Name" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
         <Label fx:id="studentIndexLabel" text="UCC/CS/001" styleClass="text-subtitle" style="-fx-font-size: 11px;" />
@@ -29,6 +30,7 @@
         </VBox>
         <VBox styleClass="card" spacing="10" VBox.vgrow="ALWAYS">
             <Label text="Attendance History" styleClass="card-title" />
+            <TextField fx:id="searchHistoryField" promptText="Search by course code, name, or status…" />
             <TableView fx:id="historyTable" VBox.vgrow="ALWAYS" styleClass="structured-table">
                 <columns>
                     <TableColumn fx:id="courseCodeCol" text="Course Code" prefWidth="150" />

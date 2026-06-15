@@ -24,73 +24,85 @@
         </div>
 
         <!-- ═══ LOGIN FORM ═══ -->
-        <form th:if="${tab == null || tab == 'login'}" action="/login" method="post">
+        <form th:if="${tab == null || tab == 'login'}" th:action="@{/login}" th:object="${loginForm}" method="post">
             <div class="form-group">
-                <label class="form-label">Role</label>
-                <select name="role" class="form-select" required>
+                <label class="form-label" for="role">Role</label>
+                <select id="role" th:field="*{role}" class="form-select" required>
                     <option value="STUDENT">Student</option>
                     <option value="LECTURER">Lecturer</option>
                 </select>
+                <p th:if="${#fields.hasErrors('role')}" th:errors="*{role}" class="field-error"></p>
             </div>
             <div class="form-group">
-                <label class="form-label">Email / Lecturer Code</label>
-                <input type="text" name="identifier" class="form-input" placeholder="Enter email or lecturer code" required>
+                <label class="form-label" for="identifier">Email / Lecturer Code</label>
+                <input type="text" id="identifier" th:field="*{identifier}" class="form-input" placeholder="Enter email or lecturer code" required>
+                <p th:if="${#fields.hasErrors('identifier')}" th:errors="*{identifier}" class="field-error"></p>
             </div>
             <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-input" placeholder="Enter password" required>
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" th:field="*{password}" class="form-input" placeholder="Enter password" required>
+                <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="field-error"></p>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Sign In</button>
         </form>
 
         <!-- ═══ STUDENT REGISTER FORM ═══ -->
-        <form th:if="${tab == 'register-student'}" action="/register/student" method="post">
+        <form th:if="${tab == 'register-student'}" th:action="@{/register/student}" th:object="${studentRegisterForm}" method="post">
             <div class="form-group">
-                <label class="form-label">Full Name</label>
-                <input type="text" name="name" class="form-input" placeholder="Enter your full name" required>
+                <label class="form-label" for="student-name">Full Name</label>
+                <input type="text" id="student-name" th:field="*{name}" class="form-input" placeholder="Enter your full name" required>
+                <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="field-error"></p>
             </div>
             <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" name="email" class="form-input" placeholder="your.email@ucc.edu.gh" required>
+                <label class="form-label" for="student-email">Email</label>
+                <input type="email" id="student-email" th:field="*{email}" class="form-input" placeholder="your.email@ucc.edu.gh" required>
+                <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="field-error"></p>
             </div>
             <div class="form-group">
-                <label class="form-label">Index Number</label>
-                <input type="text" name="indexNumber" class="form-input" placeholder="e.g. UCC/CS/0001/2023" required>
+                <label class="form-label" for="student-index">Index Number</label>
+                <input type="text" id="student-index" th:field="*{indexNumber}" class="form-input" placeholder="e.g. UCC/CS/0001/2023" required>
+                <p th:if="${#fields.hasErrors('indexNumber')}" th:errors="*{indexNumber}" class="field-error"></p>
             </div>
             <div class="form-group">
-                <label class="form-label">Department</label>
-                <select name="departmentCode" class="form-select" required>
+                <label class="form-label" for="student-dept">Department</label>
+                <select id="student-dept" th:field="*{departmentCode}" class="form-select" required>
                     <option value="">Select department</option>
                     <option th:each="dept : ${departments}" th:value="${dept.code}" th:text="${dept.name}">Department</option>
                 </select>
+                <p th:if="${#fields.hasErrors('departmentCode')}" th:errors="*{departmentCode}" class="field-error"></p>
             </div>
             <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-input" placeholder="Create a password" required>
+                <label class="form-label" for="student-password">Password</label>
+                <input type="password" id="student-password" th:field="*{password}" class="form-input" placeholder="Create a password" required>
+                <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="field-error"></p>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Register</button>
         </form>
 
         <!-- ═══ LECTURER REGISTER FORM ═══ -->
-        <form th:if="${tab == 'register-lecturer'}" action="/register/lecturer" method="post">
+        <form th:if="${tab == 'register-lecturer'}" th:action="@{/register/lecturer}" th:object="${lecturerRegisterForm}" method="post">
             <div class="form-group">
-                <label class="form-label">Full Name</label>
-                <input type="text" name="name" class="form-input" placeholder="Enter your full name" required>
+                <label class="form-label" for="lecturer-name">Full Name</label>
+                <input type="text" id="lecturer-name" th:field="*{name}" class="form-input" placeholder="Enter your full name" required>
+                <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="field-error"></p>
             </div>
             <div class="form-group">
-                <label class="form-label">Lecturer Code</label>
-                <input type="text" name="lecturerCode" class="form-input" placeholder="Provided by institution" required>
+                <label class="form-label" for="lecturer-code">Lecturer Code</label>
+                <input type="text" id="lecturer-code" th:field="*{lecturerCode}" class="form-input" placeholder="Provided by institution" required>
+                <p th:if="${#fields.hasErrors('lecturerCode')}" th:errors="*{lecturerCode}" class="field-error"></p>
             </div>
             <div class="form-group">
-                <label class="form-label">Department</label>
-                <select name="departmentCode" class="form-select" required>
+                <label class="form-label" for="lecturer-dept">Department</label>
+                <select id="lecturer-dept" th:field="*{departmentCode}" class="form-select" required>
                     <option value="">Select department</option>
                     <option th:each="dept : ${departments}" th:value="${dept.code}" th:text="${dept.name}">Department</option>
                 </select>
+                <p th:if="${#fields.hasErrors('departmentCode')}" th:errors="*{departmentCode}" class="field-error"></p>
             </div>
             <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-input" placeholder="Create a password" required>
+                <label class="form-label" for="lecturer-password">Password</label>
+                <input type="password" id="lecturer-password" th:field="*{password}" class="form-input" placeholder="Create a password" required>
+                <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="field-error"></p>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Register</button>
         </form>

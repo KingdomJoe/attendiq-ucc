@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Student per-course attendance breakdown with session history table.
+ */
 public class StudentCourseDetailController {
 
     @FXML private Label studentNameLabel;

@@ -17,6 +17,7 @@
         <Button text="Dashboard" styleClass="nav-button, nav-button-active" />
         <Button text="Courses" onAction="#handleCoursesNav" styleClass="nav-button" />
         <Button text="Analytics" onAction="#handleAnalyticsNav" styleClass="nav-button" />
+        <Button text="Profile" onAction="#handleProfile" styleClass="nav-button" />
         <Region VBox.vgrow="ALWAYS" />
         <Label fx:id="lecturerLabel" text="Dr. Lecturer" style="-fx-font-weight: bold; -fx-text-fill: #cbd5e1;" />
         <Button text="Logout" onAction="#handleLogout" styleClass="nav-button" style="-fx-text-fill: #ef4444;" />
@@ -64,6 +65,7 @@
 
             <VBox styleClass="card" spacing="10" VBox.vgrow="ALWAYS">
                 <Label text="Recent Sessions" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
+                <TextField fx:id="searchSessionsField" promptText="Search by course code, name, type, or status…" />
                 <TableView fx:id="sessionsTable" prefHeight="280" minHeight="200" styleClass="structured-table sessions-table">
                     <columns>
                         <TableColumn fx:id="courseCodeCol" text="Code" prefWidth="72" minWidth="68" maxWidth="90" />

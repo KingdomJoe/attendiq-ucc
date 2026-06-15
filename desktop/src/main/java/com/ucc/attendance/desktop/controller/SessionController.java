@@ -32,6 +32,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Live presenter view: rotating QR code display and real-time attendance roster polling.
+ */
 public class SessionController {
 
     @FXML private Label courseLabel;
@@ -54,6 +57,8 @@ public class SessionController {
     private Timeline attendanceTimeline;
     private int countdownSeconds = 5;
     private Stage fullscreenStage;
+    private volatile boolean qrPollErrorAlerted;
+    private volatile boolean rosterPollErrorAlerted;
 
     @FXML
     public void initialize() {
@@ -141,12 +146,21 @@ public class SessionController {
                         byte[] imageBytes = Base64.getDecoder().decode(qr.qrImageBase64());
                         Image image = new Image(new ByteArrayInputStream(imageBytes));
                         qrImageView.setImage(image);
+                        qrPollErrorAlerted = false;
                     } catch (Exception ex) {
-                        System.err.println("QR image decode failed: " + ex.getMessage());
+                        if (!qrPollErrorAlerted) {
+                            qrPollErrorAlerted = true;
+                            FxUtils.showError("QR Display Error", "Could not render QR image:\n" + ex.getMessage());
+                        }
                     }
                 });
             } catch (Exception e) {
-                System.err.println("Failed to fetch session QR code: " + e.getMessage());
+                Platform.runLater(() -> {
+                    if (!qrPollErrorAlerted) {
+                        qrPollErrorAlerted = true;
+                        FxUtils.showError("QR Refresh Error", "Failed to fetch session QR code:\n" + e.getMessage());
+                    }
+                });
             }
         }).start();
     }
@@ -168,9 +182,15 @@ public class SessionController {
                             .collect(Collectors.toList());
 
                     attendanceTable.setItems(FXCollections.observableArrayList(checkedInList));
+                    rosterPollErrorAlerted = false;
                 });
             } catch (Exception e) {
-                System.err.println("Failed to fetch attendance roster: " + e.getMessage());
+                Platform.runLater(() -> {
+                    if (!rosterPollErrorAlerted) {
+                        rosterPollErrorAlerted = true;
+                        FxUtils.showError("Attendance Sync Error", "Failed to refresh attendance roster:\n" + e.getMessage());
+                    }
+                });
             }
         }).start();
     }

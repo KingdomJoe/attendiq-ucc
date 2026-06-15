@@ -427,6 +427,12 @@ tbody tr:last-child td {
     color: var(--color-error-text);
 }
 
+.field-error {
+    color: var(--color-error-text);
+    font-size: 0.85rem;
+    margin-top: 0.35rem;
+}
+
 .alert-warning {
     background: var(--color-warning-bg);
     border: 1px solid var(--color-warning-border);

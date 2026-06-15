@@ -32,4 +32,9 @@ public class AuthController {
     public AuthDtos.MeResponse me() {
         return authService.me();
     }
+
+    @PatchMapping("/me")
+    public AuthDtos.MeResponse updateProfile(@Valid @RequestBody AuthDtos.UpdateProfileRequest request) {
+        return authService.updateProfile(request);
+    }
 }

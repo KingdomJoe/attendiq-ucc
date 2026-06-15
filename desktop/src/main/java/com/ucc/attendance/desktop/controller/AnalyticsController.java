@@ -21,6 +21,9 @@ import javafx.util.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Per-course attendance analytics charts and filterable course breakdown table.
+ */
 public class AnalyticsController {
 
     @FXML private Label lecturerLabel;

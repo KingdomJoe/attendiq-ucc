@@ -9,6 +9,8 @@ import com.ucc.attendance.desktop.util.TableCells;
 import com.ucc.attendance.desktop.util.TableColumns;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -22,6 +24,9 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+/**
+ * Lecturer home screen: stats, start session, and searchable recent sessions table.
+ */
 public class DashboardController {
 
     @FXML private Label lecturerLabel;
@@ -39,6 +44,7 @@ public class DashboardController {
     @FXML private Label activeSessionCourseLabel;
 
     // Table fields
+    @FXML private TextField searchSessionsField;
     @FXML private TableView<ApiClient.SessionResponse> sessionsTable;
     @FXML private TableColumn<ApiClient.SessionResponse, String> courseCodeCol;
     @FXML private TableColumn<ApiClient.SessionResponse, String> courseNameCol;
@@ -50,6 +56,8 @@ public class DashboardController {
 
     private List<ApiClient.CourseResponse> coursesList;
     private ApiClient.SessionResponse activeSession;
+    private ObservableList<ApiClient.SessionResponse> allSessions = FXCollections.observableArrayList();
+    private FilteredList<ApiClient.SessionResponse> filteredSessions;
 
     @FXML
     public void initialize() {
@@ -127,7 +135,28 @@ public class DashboardController {
         // Hide active session card initially
         activeSessionCard.setVisible(false);
 
+        filteredSessions = new FilteredList<>(allSessions, session -> true);
+        sessionsTable.setItems(filteredSessions);
+        searchSessionsField.textProperty().addListener((obs, oldVal, newVal) -> applySessionFilter(newVal));
+
         loadDashboardData();
+    }
+
+    private void applySessionFilter(String query) {
+        String q = query == null ? "" : query.trim().toLowerCase();
+        filteredSessions.setPredicate(session -> {
+            if (q.isEmpty()) {
+                return true;
+            }
+            String date = session.createdAt() != null
+                    ? DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault()).format(session.createdAt())
+                    : "";
+            return session.courseCode().toLowerCase().contains(q)
+                    || session.courseName().toLowerCase().contains(q)
+                    || session.sessionType().toLowerCase().contains(q)
+                    || session.status().toLowerCase().contains(q)
+                    || date.toLowerCase().contains(q);
+        });
     }
 
     private void loadDashboardData() {
@@ -153,7 +182,7 @@ public class DashboardController {
                     activeSessionsLabel.setText(String.valueOf(stats.sessionId() != null ? 1 : 0));
                     avgAttendanceLabel.setText(stats.ratePercent() + "%");
 
-                    sessionsTable.setItems(FXCollections.observableArrayList(sessions));
+                    allSessions.setAll(sessions);
 
                     // Check for active session
                     activeSession = null;
@@ -283,6 +312,18 @@ public class DashboardController {
     @FXML
     private void handleAnalyticsNav() {
         App.navigateTo("analytics.fxml", "Analytics");
+    }
+
+    @FXML
+    private void handleProfile() {
+        ProfileController.show(() -> {
+            if (lecturerLabel != null) {
+                lecturerLabel.setText(SessionManager.getDisplayName());
+            }
+            if (welcomeLabel != null) {
+                welcomeLabel.setText("Welcome, " + SessionManager.getDisplayName());
+            }
+        });
     }
 
     @FXML

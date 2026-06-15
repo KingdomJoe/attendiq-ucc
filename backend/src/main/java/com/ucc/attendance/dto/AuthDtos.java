@@ -44,4 +44,10 @@ public final class AuthDtos {
             String emailOrCode,
             String indexNumber
     ) {}
+
+    public record UpdateProfileRequest(
+            @NotBlank String name,
+            String currentPassword,
+            @Size(min = 8) String newPassword
+    ) {}
 }

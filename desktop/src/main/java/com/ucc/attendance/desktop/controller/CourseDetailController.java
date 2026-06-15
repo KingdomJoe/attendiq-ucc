@@ -18,6 +18,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Lecturer course detail: roster, enrollment link, and session history for one course.
+ */
 public class CourseDetailController {
 
     @FXML private Label lecturerLabel;

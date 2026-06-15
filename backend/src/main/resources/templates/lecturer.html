@@ -73,6 +73,10 @@
 
     <div class="card mt-4">
         <h2 class="card-title">&#x1F4CB; Attendance Sessions</h2>
+        <div class="form-group mb-3" style="max-width:24rem;">
+            <label class="form-label" for="session-search">Search sessions</label>
+            <input type="search" id="session-search" class="form-input" placeholder="Filter by course, type, or status…" autocomplete="off">
+        </div>
         <div class="table-container">
             <table>
                 <thead>
@@ -85,7 +89,7 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="sessions-tbody">
                     <tr th:each="s : ${sessions}">
                         <td>
                             <a th:href="@{'/lecturer/course/' + ${s.courseId}}" style="font-weight:600;" th:text="${s.courseCode}">CSC301</a>
@@ -145,5 +149,20 @@
     const assignableCourses = /*[[${assignableCourses}]]*/ [];
 </script>
 <script src="/js/lecturer.js"></script>
+<script>
+(function () {
+    var searchInput = document.getElementById("session-search");
+    var tbody = document.getElementById("sessions-tbody");
+    if (!searchInput || !tbody) return;
+    searchInput.addEventListener("input", function () {
+        var q = searchInput.value.trim().toLowerCase();
+        var rows = tbody.querySelectorAll("tr");
+        for (var i = 0; i < rows.length; i++) {
+            var text = rows[i].textContent.toLowerCase();
+            rows[i].style.display = !q || text.indexOf(q) !== -1 ? "" : "none";
+        }
+    });
+})();
+</script>
 </body>
 </html>

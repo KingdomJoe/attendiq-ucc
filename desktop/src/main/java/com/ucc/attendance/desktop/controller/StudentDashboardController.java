@@ -13,6 +13,9 @@ import javafx.stage.Stage;
 
 import java.util.List;
 
+/**
+ * Student home screen with stats, course enrollment, leave-course, and profile access.
+ */
 public class StudentDashboardController {
 
     @FXML private Label studentNameLabel;
@@ -28,6 +31,7 @@ public class StudentDashboardController {
     @FXML private ComboBox<String> availableCoursesComboBox;
     @FXML private TextField manualCodeField;
     @FXML private Button joinCourseButton;
+    @FXML private Button leaveCourseButton;
 
     private List<ApiClient.CourseResponse> myCourses;
     private List<ApiClient.CourseResponse> availableCourses;
@@ -47,6 +51,12 @@ public class StudentDashboardController {
                     viewCourseDetails(selectedCourse);
                 }
             }
+        });
+
+        enrolledCoursesListView.getSelectionModel().selectedIndexProperty().addListener((obs, oldIdx, newIdx) -> {
+            boolean hasSelection = newIdx != null && newIdx.intValue() >= 0 && myCourses != null
+                    && newIdx.intValue() < myCourses.size();
+            leaveCourseButton.setDisable(!hasSelection);
         });
 
         loadStudentDashboardData();
@@ -170,6 +180,43 @@ public class StudentDashboardController {
             e.printStackTrace();
             FxUtils.showError("Navigation Error", "Could not load course details:\n" + e.getMessage());
         }
+    }
+
+    @FXML
+    private void handleLeaveCourse() {
+        int selectedIdx = enrolledCoursesListView.getSelectionModel().getSelectedIndex();
+        if (selectedIdx < 0 || myCourses == null || selectedIdx >= myCourses.size()) {
+            FxUtils.showError("Input Error", "Select a course to leave.");
+            return;
+        }
+        ApiClient.CourseResponse course = myCourses.get(selectedIdx);
+        if (!FxUtils.showConfirmation("Leave Course",
+                "Remove " + course.courseCode() + " from your enrolled courses?")) {
+            return;
+        }
+        leaveCourseButton.setDisable(true);
+        new Thread(() -> {
+            try {
+                ApiClient.leaveCourse(course.id());
+                Platform.runLater(() -> {
+                    FxUtils.showInfo("Course Removed", course.courseCode() + " has been removed from My Courses.");
+                    loadStudentDashboardData();
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    leaveCourseButton.setDisable(false);
+                    FxUtils.showError("Leave Course Error", "Could not leave course:\n" + e.getMessage());
+                });
+            }
+        }).start();
+    }
+
+    @FXML
+    private void handleProfile() {
+        ProfileController.show(() -> {
+            studentNameLabel.setText(SessionManager.getDisplayName());
+            welcomeLabel.setText("Welcome, " + SessionManager.getDisplayName());
+        });
     }
 
     @FXML

@@ -31,6 +31,8 @@ public class ApiClient {
     public record StudentRegisterRequest(String name, String email, String indexNumber, String departmentCode, String password) {}
     public record LecturerRegisterRequest(String name, String lecturerCode, String departmentCode, String password) {}
     public record AuthResponse(String token, String role, Long userId, String displayName) {}
+    public record MeResponse(Long userId, String role, String displayName, String emailOrCode, String indexNumber) {}
+    public record UpdateProfileRequest(String name, String currentPassword, String newPassword) {}
     public record DepartmentResponse(String code, String name) {}
     
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -415,6 +417,37 @@ public class ApiClient {
                     .POST(HttpRequest.BodyPublishers.noBody())
                     .build();
             return sendRequest(request, CourseResponse.class);
+        });
+    }
+
+    public static MeResponse getMe() throws Exception {
+        return safeExecute(() -> {
+            HttpRequest request = requestBuilder("/auth/me").GET().build();
+            return sendRequest(request, MeResponse.class);
+        });
+    }
+
+    public static MeResponse updateProfile(String name, String currentPassword, String newPassword) throws Exception {
+        return safeExecute(() -> {
+            UpdateProfileRequest req = new UpdateProfileRequest(name, currentPassword, newPassword);
+            String json = mapper.writeValueAsString(req);
+            HttpRequest request = requestBuilder("/auth/me")
+                    .method("PATCH", HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+            return sendRequest(request, MeResponse.class);
+        });
+    }
+
+    public static void leaveCourse(Long courseId) throws Exception {
+        safeExecute(() -> {
+            HttpRequest request = requestBuilder("/courses/" + courseId + "/leave")
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                throw new RuntimeException("Leave course failed: " + getErrorMessage(response.body(), response.statusCode()));
+            }
+            return null;
         });
     }
 }

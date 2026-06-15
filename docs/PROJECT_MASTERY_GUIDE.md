@@ -130,6 +130,25 @@ All with model answers: [DEFENSE_QA_FLASHCARDS.md](DEFENSE_QA_FLASHCARDS.md)
 
 ---
 
+## Requirements Traceability (Academic Rubric)
+
+Maps each project requirement to concrete screens and source files for viva/demo.
+
+| Requirement | Web evidence | Desktop evidence |
+|-------------|--------------|------------------|
+| **≥5 functional screens** | `login.html`, `student.html`, `lecturer.html`, `lecturer-session.html`, `profile.html`, + course/enroll pages | 10 FXML scenes under `desktop/src/main/resources/fxml/` |
+| **Classes and objects** | Layered Spring: `WebController`, `*Service`, JPA entities, DTOs | FXML controllers, `ApiClient`, `SessionManager`, utility classes |
+| **Input forms + validation** | `login.html` with `WebForms` + `@Valid`/`BindingResult`; `profile.html` | `login.fxml` client checks; `ProfileController` dialog |
+| **Add** | Register, join course, create session, scan attendance | Register, join/assign course, start session |
+| **View** | Dashboards, history, rosters, live session | Tables/charts across all FXML screens |
+| **Search** | Client-side filter on `student.html` history + `lecturer.html` sessions | `FilteredList` on `StudentHistoryController`, `DashboardController` |
+| **Update** | `GET/POST /profile` + `PATCH /auth/me` | `ProfileController` → `ApiClient.updateProfile()` |
+| **Delete** | `POST /student/courses/{id}/leave` | `StudentDashboardController.handleLeaveCourse()` → `ApiClient.leaveCourse()` |
+| **File/DB storage** | PostgreSQL + Flyway; CSV via `ExportService` | Remote DB via API; `CsvExportHelper` local export |
+| **Feedback + comments** | Flash alerts, `GlobalExceptionHandler`, field errors | `FxUtils` alerts; `SessionController` poll error alerts; controller Javadoc |
+
+---
+
 ## Related Project Docs
 
 - [APP-PRD.md](../APP-PRD.md) — product requirements

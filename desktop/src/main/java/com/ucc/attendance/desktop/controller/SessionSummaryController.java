@@ -14,6 +14,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Post-session summary with full roster, stats, and CSV export for lecturers.
+ */
 public class SessionSummaryController {
 
     @FXML private Label lecturerLabel;

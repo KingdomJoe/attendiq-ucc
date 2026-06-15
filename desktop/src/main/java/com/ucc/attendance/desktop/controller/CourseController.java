@@ -19,6 +19,9 @@ import javafx.stage.Stage;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Lecturer course list with assign-course workflow and navigation to course detail.
+ */
 public class CourseController {
 
     @FXML private Label lecturerLabel;

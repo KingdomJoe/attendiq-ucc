@@ -10,11 +10,13 @@ import com.ucc.attendance.util.SecurityUtils;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -48,6 +50,15 @@ public class WebController {
         }
         model.addAttribute("departments", departmentRepository.findAll());
         model.addAttribute("tab", tab);
+        if (!model.containsAttribute("loginForm")) {
+            model.addAttribute("loginForm", new WebForms.LoginForm());
+        }
+        if (!model.containsAttribute("studentRegisterForm")) {
+            model.addAttribute("studentRegisterForm", new WebForms.StudentRegisterForm());
+        }
+        if (!model.containsAttribute("lecturerRegisterForm")) {
+            model.addAttribute("lecturerRegisterForm", new WebForms.LecturerRegisterForm());
+        }
         return "login";
     }
 
@@ -58,22 +69,29 @@ public class WebController {
 
     @PostMapping("/login")
     public String login(
-            @RequestParam String identifier,
-            @RequestParam String password,
-            @RequestParam UserRole role,
+            @Valid @ModelAttribute("loginForm") WebForms.LoginForm form,
+            BindingResult bindingResult,
             HttpServletResponse response,
-            RedirectAttributes redirectAttributes) {
+            Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("departments", departmentRepository.findAll());
+            model.addAttribute("tab", "login");
+            return "login";
+        }
         try {
-            AuthDtos.AuthResponse authRes = authService.login(new AuthDtos.LoginRequest(identifier, password, role));
+            AuthDtos.AuthResponse authRes = authService.login(
+                    new AuthDtos.LoginRequest(form.getIdentifier(), form.getPassword(), form.getRole()));
             setTokenCookie(response, authRes.token());
-            if (role == UserRole.STUDENT) {
+            if (form.getRole() == UserRole.STUDENT) {
                 return "redirect:/student";
             }
             return "redirect:/lecturer";
         } catch (Exception e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : "Invalid credentials";
-            redirectAttributes.addFlashAttribute("error", errorMsg);
-            return "redirect:/?tab=login";
+            model.addAttribute("error", errorMsg);
+            model.addAttribute("departments", departmentRepository.findAll());
+            model.addAttribute("tab", "login");
+            return "login";
         }
     }
 
@@ -84,23 +102,28 @@ public class WebController {
 
     @PostMapping("/register/student")
     public String registerStudent(
-            @RequestParam String name,
-            @RequestParam String email,
-            @RequestParam String indexNumber,
-            @RequestParam String departmentCode,
-            @RequestParam String password,
+            @Valid @ModelAttribute("studentRegisterForm") WebForms.StudentRegisterForm form,
+            BindingResult bindingResult,
             HttpServletResponse response,
-            RedirectAttributes redirectAttributes) {
+            Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("departments", departmentRepository.findAll());
+            model.addAttribute("tab", "register-student");
+            return "login";
+        }
         try {
             AuthDtos.AuthResponse authRes = authService.registerStudent(
-                    new AuthDtos.StudentRegisterRequest(name, email, indexNumber, departmentCode, password)
+                    new AuthDtos.StudentRegisterRequest(
+                            form.getName(), form.getEmail(), form.getIndexNumber(), form.getDepartmentCode(), form.getPassword())
             );
             setTokenCookie(response, authRes.token());
             return "redirect:/student";
         } catch (Exception e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : "Registration failed";
-            redirectAttributes.addFlashAttribute("error", errorMsg);
-            return "redirect:/?tab=register-student";
+            model.addAttribute("error", errorMsg);
+            model.addAttribute("departments", departmentRepository.findAll());
+            model.addAttribute("tab", "register-student");
+            return "login";
         }
     }
 
@@ -111,23 +134,76 @@ public class WebController {
 
     @PostMapping("/register/lecturer")
     public String registerLecturer(
-            @RequestParam String name,
-            @RequestParam String lecturerCode,
-            @RequestParam String departmentCode,
-            @RequestParam String password,
+            @Valid @ModelAttribute("lecturerRegisterForm") WebForms.LecturerRegisterForm form,
+            BindingResult bindingResult,
             HttpServletResponse response,
+            Model model,
             RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("departments", departmentRepository.findAll());
+            model.addAttribute("tab", "register-lecturer");
+            return "login";
+        }
         try {
             AuthDtos.AuthResponse authRes = authService.registerLecturer(
-                    new AuthDtos.LecturerRegisterRequest(name, lecturerCode, departmentCode, password)
+                    new AuthDtos.LecturerRegisterRequest(
+                            form.getName(), form.getLecturerCode(), form.getDepartmentCode(), form.getPassword())
             );
             setTokenCookie(response, authRes.token());
             redirectAttributes.addFlashAttribute("success", "Lecturer registered successfully. You can manage sessions via this web portal or the Windows desktop app.");
             return "redirect:/lecturer";
         } catch (Exception e) {
             String errorMsg = e.getMessage() != null ? e.getMessage() : "Registration failed";
-            redirectAttributes.addFlashAttribute("error", errorMsg);
-            return "redirect:/?tab=register-lecturer";
+            model.addAttribute("error", errorMsg);
+            model.addAttribute("departments", departmentRepository.findAll());
+            model.addAttribute("tab", "register-lecturer");
+            return "login";
+        }
+    }
+
+    @GetMapping("/profile")
+    public String profilePage(Model model) {
+        AuthDtos.MeResponse me = authService.me();
+        WebForms.ProfileForm form = new WebForms.ProfileForm();
+        form.setName(me.displayName());
+        model.addAttribute("user", me);
+        model.addAttribute("profileForm", form);
+        return "profile";
+    }
+
+    @PostMapping("/profile")
+    public String updateProfile(
+            @Valid @ModelAttribute("profileForm") WebForms.ProfileForm form,
+            BindingResult bindingResult,
+            Model model) {
+        AuthDtos.MeResponse me = authService.me();
+        model.addAttribute("user", me);
+        if (form.getNewPassword() != null && !form.getNewPassword().isBlank()
+                && form.getNewPassword().length() < 8) {
+            bindingResult.rejectValue("newPassword", "size", "New password must be at least 8 characters");
+        }
+        if (form.getNewPassword() != null && !form.getNewPassword().isBlank()
+                && (form.getCurrentPassword() == null || form.getCurrentPassword().isBlank())) {
+            bindingResult.rejectValue("currentPassword", "required", "Current password is required to set a new password");
+        }
+        if (bindingResult.hasErrors()) {
+            return "profile";
+        }
+        try {
+            AuthDtos.MeResponse updated = authService.updateProfile(
+                    new AuthDtos.UpdateProfileRequest(form.getName(), form.getCurrentPassword(), form.getNewPassword()));
+            form.setName(updated.displayName());
+            form.setCurrentPassword(null);
+            form.setNewPassword(null);
+            model.addAttribute("profileForm", form);
+            model.addAttribute("success", "Profile updated successfully.");
+            return "profile";
+        } catch (ApiException e) {
+            model.addAttribute("error", e.getMessage());
+            return "profile";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage() != null ? e.getMessage() : "Profile update failed");
+            return "profile";
         }
     }
 

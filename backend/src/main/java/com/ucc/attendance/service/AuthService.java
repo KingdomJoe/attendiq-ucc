@@ -176,4 +176,38 @@ public class AuthService {
                 null
         );
     }
+
+    @Transactional
+    public AuthDtos.MeResponse updateProfile(AuthDtos.UpdateProfileRequest req) {
+        UserPrincipal principal = SecurityUtils.currentUser();
+        if (req.newPassword() != null && !req.newPassword().isBlank()
+                && (req.currentPassword() == null || req.currentPassword().isBlank())) {
+            throw new ApiException("CURRENT_PASSWORD_REQUIRED", "Current password is required to set a new password", HttpStatus.BAD_REQUEST);
+        }
+
+        if (principal.getRole() == UserRole.STUDENT) {
+            Student student = studentRepository.findById(principal.getUserId())
+                    .orElseThrow(() -> new ApiException("NOT_FOUND", "Student not found", HttpStatus.NOT_FOUND));
+            student.setName(req.name().trim());
+            if (req.newPassword() != null && !req.newPassword().isBlank()) {
+                if (!passwordEncoder.matches(req.currentPassword(), student.getPasswordHash())) {
+                    throw new ApiException("INVALID_PASSWORD", "Current password is incorrect", HttpStatus.BAD_REQUEST);
+                }
+                student.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+            }
+            studentRepository.save(student);
+        } else {
+            Lecturer lecturer = lecturerRepository.findById(principal.getUserId())
+                    .orElseThrow(() -> new ApiException("NOT_FOUND", "Lecturer not found", HttpStatus.NOT_FOUND));
+            lecturer.setName(req.name().trim());
+            if (req.newPassword() != null && !req.newPassword().isBlank()) {
+                if (!passwordEncoder.matches(req.currentPassword(), lecturer.getPasswordHash())) {
+                    throw new ApiException("INVALID_PASSWORD", "Current password is incorrect", HttpStatus.BAD_REQUEST);
+                }
+                lecturer.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+            }
+            lecturerRepository.save(lecturer);
+        }
+        return me();
+    }
 }

@@ -43,6 +43,10 @@ public class SessionManager {
         return userRole;
     }
 
+    public static synchronized void setDisplayName(String name) {
+        displayName = name;
+    }
+
     // Backward compatibility for lecturer portal
     public static synchronized String getLecturerName() {
         return displayName;
