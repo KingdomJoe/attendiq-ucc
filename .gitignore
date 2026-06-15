@@ -32,3 +32,8 @@ Thumbs.db
 
 # Docs captures
 docs/prototype-full.png
+
+# QA / packaging scratch
+dogfood-output/
+desktop/jpackage-input/
+desktop/installer/

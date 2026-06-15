@@ -4,19 +4,19 @@ on:
   push:
     branches: ["main"]
     tags:
-      - "v*.*.*"         # triggers a GitHub Release on e.g. v1.0.0
+      - "v*"
   pull_request:
     branches: ["main"]
-  workflow_dispatch:     # manual trigger from GitHub UI
+  workflow_dispatch:
+
+env:
+  PRODUCTION_API_URL: https://ucc-attendance-system.onrender.com
+  PRODUCTION_WEB_URL: https://ucc-attendance-system.onrender.com
 
 jobs:
-  # ── 1. Build the fat-JAR ────────────────────────────────────────────
   build:
-    name: Build Desktop Fat-JAR
+    name: Build Desktop JAR + Windows EXE
     runs-on: windows-latest
-
-    outputs:
-      jar_name: ${{ steps.find_jar.outputs.jar_name }}
 
     steps:
       - name: Checkout Repository
@@ -29,29 +29,58 @@ jobs:
           distribution: temurin
           cache: maven
 
-      - name: Build all modules (skip tests)
-        run: mvn clean package -DskipTests
-
-      - name: Find shaded JAR name
-        id: find_jar
+      - name: Resolve app version from tag
+        id: version
         shell: pwsh
         run: |
-          $jar = Get-ChildItem -Path "desktop/target" -Filter "attendance-desktop-*.jar" |
-                 Where-Object { $_.Name -notmatch "^original-" } |
-                 Select-Object -First 1
-          echo "jar_name=$($jar.Name)" >> $env:GITHUB_OUTPUT
-          echo "Found JAR: $($jar.FullName)"
+          $tag = "${{ github.ref_name }}"
+          if ($tag -match '^v(.+)$') {
+            $raw = $Matches[1]
+          } else {
+            $raw = "1.0.0-SNAPSHOT"
+          }
+          # jpackage requires numeric dotted version (strip -beta / -rc suffixes)
+          $numeric = ($raw -replace '-.*$', '')
+          if ($numeric -notmatch '^\d+(\.\d+){0,3}$') { $numeric = "1.0.0" }
+          "app_version=$numeric" >> $env:GITHUB_OUTPUT
+          "display_version=$raw" >> $env:GITHUB_OUTPUT
+          Write-Host "App version: $numeric (from $tag)"
 
-      - name: Upload JAR as build artifact
+      - name: Install WiX Toolset (required for jpackage Setup.exe)
+        run: choco install wixtoolset -y --no-progress
+
+      - name: Build desktop fat-JAR
+        run: mvn clean package -pl desktop -am -DskipTests
+
+      - name: Build Windows EXE installer (jpackage)
+        shell: pwsh
+        run: |
+          $wix = Get-ChildItem "C:\Program Files (x86)\WiX Toolset*" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($wix) { $env:PATH = "$($wix.FullName)\bin;$env:PATH" }
+          ./scripts/build-desktop-installer.ps1 -Version "${{ steps.version.outputs.app_version }}" -ApiUrl "${{ env.PRODUCTION_API_URL }}" -PackageType exe
+
+      - name: Rename release assets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release-assets | Out-Null
+          $jar = Get-ChildItem desktop/target -Filter "attendance-desktop-*.jar" |
+                 Where-Object { $_.Name -notmatch "^original-" } | Select-Object -First 1
+          Copy-Item $jar.FullName "release-assets/$($jar.Name)"
+          $exe = Get-ChildItem desktop/installer -Filter "*.exe" |
+                 Where-Object { $_.DirectoryName -eq (Resolve-Path desktop/installer).Path } |
+                 Select-Object -First 1
+          if (-not $exe) { throw "No .exe produced by jpackage" }
+          $exeName = "AttendIQ-Desktop-${{ steps.version.outputs.display_version }}-Setup.exe"
+          Copy-Item $exe.FullName "release-assets/$exeName"
+          Get-ChildItem release-assets
+
+      - name: Upload desktop build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: attendiq-desktop-jar
+          name: attendiq-desktop-release
           retention-days: 30
-          path: |
-            desktop/target/attendance-desktop-*.jar
-            !desktop/target/original-*.jar
+          path: release-assets/*
 
-  # ── 2. Publish a GitHub Release (only on version tags) ─────────────
   release:
     name: Publish GitHub Release
     runs-on: ubuntu-latest
@@ -59,13 +88,13 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
 
     permissions:
-      contents: write   # required to create releases and upload assets
+      contents: write
 
     steps:
-      - name: Download JAR artifact
+      - name: Download release assets
         uses: actions/download-artifact@v4
         with:
-          name: attendiq-desktop-jar
+          name: attendiq-desktop-release
           path: release-assets/
 
       - name: List release assets
@@ -78,23 +107,31 @@ jobs:
           tag_name: ${{ github.ref_name }}
           draft: false
           prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          generate_release_notes: true
           body: |
             ## AttendIQ Desktop ${{ github.ref_name }}
 
-            ### 📥 Installation
-            1. Download `attendance-desktop-*.jar` from the Assets section below
-            2. Ensure **Java 17** (or later) is installed on your Windows machine
-            3. Double-click the JAR, or run: `java -jar attendance-desktop-*.jar`
+            **Production server:** ${{ env.PRODUCTION_WEB_URL }}
 
-            ### ⚙️ Server
-            Connects to **https://ucc-attendance-system.onrender.com** (production).
-            For local development only:
-            ```
+            ### Download (Windows)
+
+            | Asset | Use when |
+            |-------|----------|
+            | `AttendIQ-Desktop-*-Setup.exe` | **Recommended** — installer with bundled Java runtime (no separate JDK install) |
+            | `attendance-desktop-*.jar` | Advanced — requires **Java 17+** installed |
+
+            ### Web app (students & lecturers in browser)
+            ${{ env.PRODUCTION_WEB_URL }}
+
+            ### Demo accounts
+            | Role | Login | Password |
+            |------|-------|----------|
+            | Lecturer | `LEC001` | `lecturer123` |
+            | Student | `student@ucc.edu.gh` | `student123` |
+
+            ### Local development only
+            ```bat
             set ATTENDIQ_DEV=true
             java -jar attendance-desktop-*.jar
             ```
-            or `java -Dapi.url=http://localhost:8080 -jar attendance-desktop-*.jar`
-
-            ### 🌐 Web app (students)
-            https://ucc-attendance-system.onrender.com
-          files: release-assets/*.jar
+          files: release-assets/*

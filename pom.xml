@@ -9,7 +9,7 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>UCC Attendance System</name>
-    <description>Smart Attendance System — Multi-Module Project</description>
+    <description>AttendIQ — UCC smart attendance (Spring Boot web + JavaFX desktop). Production: https://ucc-attendance-system.onrender.com</description>
 
     <modules>
         <module>backend</module>

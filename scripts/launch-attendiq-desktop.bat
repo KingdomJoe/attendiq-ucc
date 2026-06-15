@@ -1,12 +1,27 @@
 @echo off
-REM AttendIQ Desktop — production launcher (connects to Render)
+REM AttendIQ Desktop — production JAR launcher (connects to Render via api.properties)
 REM Requires Java 17+
 
-set JAR=%~dp0attendance-desktop-1.0.0-SNAPSHOT.jar
-if not exist "%JAR%" (
-  echo Place this script next to attendance-desktop-*.jar
+setlocal enabledelayedexpansion
+set "DIR=%~dp0"
+set "JAR="
+
+for %%F in ("%DIR%..\desktop\target\attendance-desktop-*.jar") do (
+  echo %%~nxF | findstr /i "original" >nul || set "JAR=%%F"
+)
+
+if not defined JAR (
+  for %%F in ("%DIR%attendance-desktop-*.jar") do (
+    echo %%~nxF | findstr /i "original" >nul || set "JAR=%%F"
+  )
+)
+
+if not defined JAR (
+  echo Could not find attendance-desktop-*.jar
+  echo Download from: https://github.com/KingdomJoe/attendiq-ucc/releases
   exit /b 1
 )
 
+echo Starting AttendIQ Desktop: %JAR%
 java -jar "%JAR%"
 pause
