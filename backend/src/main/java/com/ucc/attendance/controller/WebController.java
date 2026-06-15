@@ -11,25 +11,13 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.google.zxing.*;
-import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
-import com.google.zxing.common.HybridBinarizer;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
@@ -169,35 +157,19 @@ public class WebController {
         return "student";
     }
 
-    // ── QR Image Upload Scan ────────────────────────────────────────
+    // ── Session Code Manual Entry (no-JS fallback) ──────────────────
 
-    @PostMapping("/student/scan-image")
-    public String scanQrImage(
-            @RequestParam("qrImage") MultipartFile qrImage,
+    @PostMapping("/student/scan-code")
+    public String scanByCode(
+            @RequestParam String sessionCode,
             @RequestParam String indexNumber,
+            @RequestParam(required = false) String clientDeviceId,
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
         try {
-            // Decode QR code from uploaded image using ZXing
-            BufferedImage image = ImageIO.read(new ByteArrayInputStream(qrImage.getBytes()));
-            if (image == null) {
-                throw new ApiException("INVALID_IMAGE", "Could not read the uploaded image. Please try again.", HttpStatus.BAD_REQUEST);
-            }
-
-            LuminanceSource source = new BufferedImageLuminanceSource(image);
-            BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-            Result qrResult;
-            try {
-                qrResult = new MultiFormatReader().decode(bitmap);
-            } catch (NotFoundException e) {
-                throw new ApiException("NO_QR_FOUND", "No QR code detected in the image. Please take a clear photo of the QR code.", HttpStatus.BAD_REQUEST);
-            }
-
-            String token = qrResult.getText();
-            String deviceFingerprint = generateServerFingerprint(request);
-
             AttendanceDtos.ScanResponse scanResponse = attendanceService.scan(
-                    new AttendanceDtos.ScanRequest(token, deviceFingerprint, indexNumber), request
+                    new AttendanceDtos.ScanRequest(sessionCode.trim(), indexNumber, clientDeviceId, null),
+                    request
             );
 
             redirectAttributes.addFlashAttribute("scanSuccess", true);
@@ -208,34 +180,7 @@ public class WebController {
             redirectAttributes.addFlashAttribute("markTime", formattedTime);
             return "redirect:/student";
         } catch (ApiException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/student";
-        } catch (IOException e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to process the image. Please try again.");
-            return "redirect:/student";
-        }
-    }
-
-    // ── Session Code Manual Entry ───────────────────────────────────
-
-    @PostMapping("/student/scan-code")
-    public String scanByCode(
-            @RequestParam String sessionCode,
-            @RequestParam String indexNumber,
-            HttpServletRequest request,
-            RedirectAttributes redirectAttributes) {
-        try {
-            String deviceFingerprint = generateServerFingerprint(request);
-            AttendanceDtos.ScanResponse scanResponse = attendanceService.scan(
-                    new AttendanceDtos.ScanRequest(sessionCode.trim(), deviceFingerprint, indexNumber), request
-            );
-
-            redirectAttributes.addFlashAttribute("scanSuccess", true);
-            redirectAttributes.addFlashAttribute("successCourse", scanResponse.courseCode());
-            String formattedTime = scanResponse.attendanceTime() != null ?
-                    DateTimeFormatter.ofPattern("hh:mm a").withZone(ZoneId.systemDefault())
-                            .format(scanResponse.attendanceTime()) : "Now";
-            redirectAttributes.addFlashAttribute("markTime", formattedTime);
+            redirectAttributes.addFlashAttribute("error", scanErrorMessage(e));
             return "redirect:/student";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage() != null ? e.getMessage() : "Invalid session code");
@@ -449,24 +394,16 @@ public class WebController {
         response.addCookie(cookie);
     }
 
-    /**
-     * Generates a server-side device fingerprint from the request's
-     * User-Agent and remote IP address. Replaces client-side FingerprintJS.
-     */
-    private String generateServerFingerprint(HttpServletRequest request) {
-        String ua = request.getHeader("User-Agent");
-        String ip = request.getRemoteAddr();
-        String raw = (ua != null ? ua : "") + "|" + (ip != null ? ip : "");
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(raw.getBytes(StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            return "server_fp_" + raw.hashCode();
-        }
+    private static String scanErrorMessage(ApiException e) {
+        return switch (e.getErrorCode()) {
+            case "INVALID_INDEX" -> "Index number does not match your account.";
+            case "ALREADY_MARKED" -> "You are already marked present for this session.";
+            case "DEVICE_ALREADY_USED" -> "This device has already been used to mark attendance in this session.";
+            case "QR_EXPIRED" -> "This QR code has expired. Ask your lecturer to refresh it.";
+            case "NOT_ENROLLED" -> "You are not enrolled in this course.";
+            case "QR_CONSUMED" -> "This QR code has already been used.";
+            case "SESSION_CLOSED" -> "This attendance session has ended.";
+            default -> e.getMessage();
+        };
     }
 }

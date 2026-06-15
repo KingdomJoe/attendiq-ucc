@@ -170,7 +170,7 @@ public class SessionService {
         );
     }
 
-    public AttendanceSession validateQrToken(String token) {
+    public AttendanceSession resolveQrToken(String token) {
         Claims claims;
         try {
             claims = jwtService.parseQrClaims(token);
@@ -201,8 +201,34 @@ public class SessionService {
             throw new ApiException("SESSION_CLOSED", "Attendance session is closed", HttpStatus.BAD_REQUEST);
         }
 
+        return session;
+    }
+
+    @Transactional
+    public void consumeQrToken(String token) {
+        Claims claims;
+        try {
+            claims = jwtService.parseQrClaims(token);
+        } catch (Exception e) {
+            throw new ApiException("QR_INVALID", "Invalid QR code", HttpStatus.BAD_REQUEST);
+        }
+
+        String nonce = claims.get("nonce", String.class);
+        QrToken qrToken = qrTokenRepository.findByNonce(nonce)
+                .orElseThrow(() -> new ApiException("QR_INVALID", "QR token not recognized", HttpStatus.BAD_REQUEST));
+
+        if (qrToken.isConsumed()) {
+            throw new ApiException("QR_CONSUMED", "QR code already used", HttpStatus.BAD_REQUEST);
+        }
+
         qrToken.setConsumed(true);
         qrTokenRepository.save(qrToken);
+    }
+
+    @Transactional
+    public AttendanceSession validateQrToken(String token) {
+        AttendanceSession session = resolveQrToken(token);
+        consumeQrToken(token);
         return session;
     }
 

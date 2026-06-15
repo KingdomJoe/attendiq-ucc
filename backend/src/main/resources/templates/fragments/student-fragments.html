@@ -75,4 +75,44 @@
     <a href="/student" class="btn btn-outline btn-sm mt-2">Try again</a>
 </div>
 
+<!-- Scan Confirm Modal -->
+<div th:fragment="scan-modal" id="scan-modal" class="scan-modal hidden" role="dialog" aria-modal="true" aria-labelledby="scan-modal-title">
+    <div class="scan-modal-backdrop" data-scan-dismiss="true"></div>
+    <div class="scan-modal-panel">
+        <div id="scan-modal-confirm" class="scan-modal-state">
+            <h3 id="scan-modal-title" class="scan-modal-title">Confirm attendance</h3>
+            <p class="text-sm text-muted mb-3">QR captured. Enter your index number to confirm.</p>
+            <div class="form-group">
+                <label class="form-label" for="scan-modal-index">Index Number</label>
+                <input type="text" id="scan-modal-index" class="form-input"
+                       th:value="${user.indexNumber}" autocomplete="off" required>
+            </div>
+            <button type="button" id="scan-modal-confirm-btn" class="btn btn-primary btn-block">
+                &#x2714; Confirm Attendance
+            </button>
+            <button type="button" class="btn btn-outline btn-block btn-sm mt-2" data-scan-dismiss="true">
+                Cancel
+            </button>
+        </div>
+
+        <div id="scan-modal-success" class="scan-modal-state hidden text-center">
+            <div class="success-ring success-ring--animated">&#x2713;</div>
+            <p class="font-semibold mt-3">Attendance confirmed!</p>
+            <p id="scan-modal-success-course" class="text-muted text-sm mt-1"></p>
+            <p id="scan-modal-success-time" class="text-muted text-xs mt-1"></p>
+        </div>
+
+        <div id="scan-modal-error" class="scan-modal-state hidden">
+            <h3 class="scan-modal-title">Could not mark attendance</h3>
+            <div id="scan-modal-error-message" class="alert alert-error"></div>
+            <button type="button" id="scan-modal-error-retry" class="btn btn-primary btn-block btn-sm">
+                Try again
+            </button>
+            <button type="button" class="btn btn-outline btn-block btn-sm mt-2" data-scan-dismiss="true">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
 </html>

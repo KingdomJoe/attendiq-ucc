@@ -18,7 +18,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Map<String, String>> handleApi(ApiException ex) {
         return ResponseEntity.status(ex.getStatus())
-                .body(Map.of("error", ex.getErrorCode(), "message", ex.getMessage()));
+                .body(Map.of("errorCode", ex.getErrorCode(), "message", ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -27,18 +27,18 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining("; "));
         return ResponseEntity.badRequest()
-                .body(Map.of("error", "VALIDATION_ERROR", "message", message));
+                .body(Map.of("errorCode", "VALIDATION_ERROR", "message", message));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDenied() {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("error", "FORBIDDEN", "message", "Access denied"));
+                .body(Map.of("errorCode", "FORBIDDEN", "message", "Access denied"));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGeneric(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "INTERNAL_ERROR", "message", ex.getMessage() != null ? ex.getMessage() : "Unexpected error"));
+                .body(Map.of("errorCode", "INTERNAL_ERROR", "message", ex.getMessage() != null ? ex.getMessage() : "Unexpected error"));
     }
 }

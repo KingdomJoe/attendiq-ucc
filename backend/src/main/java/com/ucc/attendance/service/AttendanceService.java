@@ -6,6 +6,7 @@ import com.ucc.attendance.exception.ApiException;
 import com.ucc.attendance.repository.AttendanceRecordRepository;
 import com.ucc.attendance.repository.StudentRepository;
 import com.ucc.attendance.security.UserPrincipal;
+import com.ucc.attendance.util.DeviceFingerprintUtil;
 import com.ucc.attendance.util.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,7 @@ public class AttendanceService {
             throw new ApiException("INVALID_INDEX", "Index number does not match your account", HttpStatus.BAD_REQUEST);
         }
 
-        AttendanceSession session = sessionService.validateQrToken(req.token());
+        AttendanceSession session = sessionService.resolveQrToken(req.token());
 
         boolean enrolled = student.getCourses().stream()
                 .anyMatch(c -> c.getId().equals(session.getCourse().getId()));
@@ -45,16 +46,20 @@ public class AttendanceService {
         }
 
         if (attendanceRecordRepository.existsBySessionIdAndStudentId(session.getId(), student.getId())) {
-            throw new ApiException("ALREADY_MARKED", "Attendance already recorded for this session", HttpStatus.CONFLICT);
+            throw new ApiException("ALREADY_MARKED", "You are already marked present for this session", HttpStatus.CONFLICT);
         }
-        if (attendanceRecordRepository.existsBySessionIdAndDeviceFingerprint(session.getId(), req.deviceFingerprint())) {
-            throw new ApiException("DEVICE_ALREADY_USED", "This device already marked attendance", HttpStatus.CONFLICT);
+
+        String fingerprint = DeviceFingerprintUtil.resolve(
+                req.clientDeviceId(), req.deviceFingerprint(), httpRequest);
+
+        if (attendanceRecordRepository.existsBySessionIdAndDeviceFingerprint(session.getId(), fingerprint)) {
+            throw new ApiException("DEVICE_ALREADY_USED", "This device has already been used to mark attendance in this session", HttpStatus.CONFLICT);
         }
 
         AttendanceRecord record = AttendanceRecord.builder()
                 .session(session)
                 .student(student)
-                .deviceFingerprint(req.deviceFingerprint())
+                .deviceFingerprint(fingerprint)
                 .ipAddress(httpRequest.getRemoteAddr())
                 .userAgent(httpRequest.getHeader("User-Agent"))
                 .status(AttendanceStatus.PRESENT)
@@ -63,8 +68,13 @@ public class AttendanceService {
         try {
             attendanceRecordRepository.save(record);
         } catch (DataIntegrityViolationException e) {
-            throw new ApiException("ALREADY_MARKED", "Attendance already recorded", HttpStatus.CONFLICT);
+            if (attendanceRecordRepository.existsBySessionIdAndStudentId(session.getId(), student.getId())) {
+                throw new ApiException("ALREADY_MARKED", "You are already marked present for this session", HttpStatus.CONFLICT);
+            }
+            throw new ApiException("DEVICE_ALREADY_USED", "This device has already been used to mark attendance in this session", HttpStatus.CONFLICT);
         }
+
+        sessionService.consumeQrToken(req.token());
 
         return new AttendanceDtos.ScanResponse(
                 "Attendance confirmed",

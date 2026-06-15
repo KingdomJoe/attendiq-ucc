@@ -958,6 +958,101 @@ tbody tr:last-child td {
 .gap-2 { gap: 0.5rem; }
 .gap-3 { gap: 0.75rem; }
 
+/* ── Scanner box ───────────────────────────────────────────── */
+.scanner-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 12rem;
+    aspect-ratio: 1;
+    margin: 0 auto;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-muted, #f8fafc);
+}
+
+.scanner-icon {
+    font-size: 2.5rem;
+    opacity: 0.6;
+}
+
+/* ── Success ring animation ────────────────────────────────── */
+.success-ring {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    border: 3px solid var(--color-success, #16a34a);
+    color: var(--color-success, #16a34a);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 auto;
+}
+
+.success-ring--animated {
+    animation: success-ring-pop 0.6s ease-out;
+}
+
+@keyframes success-ring-pop {
+    0% {
+        transform: scale(0.6);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.08);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ── Scan confirm modal ────────────────────────────────────── */
+body.scan-modal-open {
+    overflow: hidden;
+}
+
+.scan-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.scan-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+}
+
+.scan-modal-panel {
+    position: relative;
+    width: 100%;
+    max-width: 22rem;
+    background: var(--color-surface, #fff);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+    padding: 1.25rem;
+    z-index: 1;
+}
+
+.scan-modal-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem;
+}
+
+.scan-modal-state .alert {
+    margin-bottom: 0.75rem;
+}
+
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .stats-grid {
@@ -971,5 +1066,16 @@ tbody tr:last-child td {
     .navbar-inner {
         flex-wrap: wrap;
         gap: 0.5rem;
+    }
+
+    .scan-modal {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .scan-modal-panel {
+        max-width: none;
+        border-radius: var(--radius-lg, 12px) var(--radius-lg, 12px) 0 0;
+        padding: 1.5rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
     }
 }

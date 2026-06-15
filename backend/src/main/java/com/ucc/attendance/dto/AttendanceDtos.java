@@ -10,8 +10,9 @@ public final class AttendanceDtos {
 
     public record ScanRequest(
             @NotBlank String token,
-            @NotBlank String deviceFingerprint,
-            @NotBlank String indexNumber
+            @NotBlank String indexNumber,
+            String clientDeviceId,
+            String deviceFingerprint
     ) {}
 
     public record ScanResponse(

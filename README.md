@@ -78,6 +78,13 @@ Render environment variables for production are documented in [`render-env.examp
 ## Documentation
 
 - [APP-PRD.md](APP-PRD.md) — product requirements
+- [docs/PROJECT_MASTERY_GUIDE.md](docs/PROJECT_MASTERY_GUIDE.md) — defense prep & project overview (start here)
+- [docs/TEAM_BRIEFING_SCRIPT.md](docs/TEAM_BRIEFING_SCRIPT.md) — analogies & 10-minute team presentation
+- [docs/DEFENSE_QA_FLASHCARDS.md](docs/DEFENSE_QA_FLASHCARDS.md) — 60+ viva Q&A with model answers
+- [docs/PRESENTATION_OUTLINE.md](docs/PRESENTATION_OUTLINE.md) — slide-by-slide deck outline
+- [docs/EXECUTIVE_SUMMARY.md](docs/EXECUTIVE_SUMMARY.md) — 2-page report appendix
+- [docs/DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md) — live demo step-by-step
+- [docs/FUTURE_WORK_SLIDE.md](docs/FUTURE_WORK_SLIDE.md) — closing slide (admin, geofencing, AI)
 - [docs/architecture_reference.md](docs/architecture_reference.md) — hybrid web + desktop architecture
 - [docs/E2E-VALIDATION.md](docs/E2E-VALIDATION.md) — acceptance tests
 - [render-env.example](render-env.example) — Render production env vars
