@@ -27,6 +27,12 @@ public class AttendanceService {
     private final StudentRepository studentRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
 
+    /**
+     * Records attendance for the logged-in student. QR tokens are validated via
+     * {@link SessionService#resolveQrToken} but only consumed after a successful
+     * save — failed attempts must not invalidate the code (e.g. typoed index).
+     * Fraud controls: index match, enrollment, per-session student/device uniqueness, QR expiry.
+     */
     @Transactional
     public AttendanceDtos.ScanResponse scan(AttendanceDtos.ScanRequest req, HttpServletRequest httpRequest) {
         UserPrincipal studentPrincipal = SecurityUtils.requireRole(UserRole.STUDENT);

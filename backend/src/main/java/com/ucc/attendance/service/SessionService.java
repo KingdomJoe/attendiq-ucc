@@ -170,6 +170,13 @@ public class SessionService {
         );
     }
 
+    /**
+     * Validates a QR JWT and session without marking the token consumed.
+     * Consumption is deferred until attendance is successfully saved so failed
+     * confirms (wrong index, not enrolled, already marked, device conflict) do not
+     * burn the code — the same student can retry while the token is still valid.
+     * Multiple enrolled students may use the same live QR within its TTL window.
+     */
     public AttendanceSession resolveQrToken(String token) {
         Claims claims;
         try {
@@ -204,6 +211,10 @@ public class SessionService {
         return session;
     }
 
+    /**
+     * Marks a QR token as consumed after a successful attendance save.
+     * Called only from {@link AttendanceService#scan} once the record is persisted.
+     */
     @Transactional
     public void consumeQrToken(String token) {
         Claims claims;
