@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/departments").permitAll()
-                        .requestMatchers("/", "/login", "/register/**", "/logout", "/lecturer-download", "/enroll/**", "/error").permitAll()
+                        .requestMatchers("/", "/login", "/register/**", "/logout", "/forgot-password", "/lecturer-download", "/enroll/**", "/error").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico", "/manifest.json", "/sw.js", "/offline.html").permitAll()
                         .anyRequest().authenticated()
                 )

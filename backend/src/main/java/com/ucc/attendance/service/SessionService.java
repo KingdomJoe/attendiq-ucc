@@ -2,6 +2,7 @@ package com.ucc.attendance.service;
 
 import com.ucc.attendance.config.AppProperties;
 import com.ucc.attendance.domain.*;
+import com.ucc.attendance.dto.AttendanceDtos;
 import com.ucc.attendance.dto.SessionDtos;
 import com.ucc.attendance.exception.ApiException;
 import com.ucc.attendance.repository.*;
@@ -176,6 +177,7 @@ public class SessionService {
      * confirms (wrong index, not enrolled, already marked, device conflict) do not
      * burn the code — the same student can retry while the token is still valid.
      * Multiple enrolled students may use the same live QR within its TTL window.
+     * Tokens are not single-use per student; attendance uniqueness is enforced on the session record.
      */
     public AttendanceSession resolveQrToken(String token) {
         Claims claims;
@@ -191,9 +193,6 @@ public class SessionService {
         QrToken qrToken = qrTokenRepository.findByNonce(nonce)
                 .orElseThrow(() -> new ApiException("QR_INVALID", "QR token not recognized", HttpStatus.BAD_REQUEST));
 
-        if (qrToken.isConsumed()) {
-            throw new ApiException("QR_CONSUMED", "QR code already used", HttpStatus.BAD_REQUEST);
-        }
         if (qrToken.getExpiresAt().isBefore(Instant.now())) {
             throw new ApiException("QR_EXPIRED", "QR code has expired", HttpStatus.BAD_REQUEST);
         }
@@ -209,6 +208,30 @@ public class SessionService {
         }
 
         return session;
+    }
+
+    /**
+     * Validates a scanned QR and extends its expiry so the student confirm modal has time to complete.
+     */
+    @Transactional
+    public AttendanceDtos.ScanPreviewResponse previewQrToken(String token) {
+        AttendanceSession session = resolveQrToken(token);
+        Claims claims = jwtService.parseQrClaims(token);
+        String nonce = claims.get("nonce", String.class);
+        QrToken qrToken = qrTokenRepository.findByNonce(nonce)
+                .orElseThrow(() -> new ApiException("QR_INVALID", "QR token not recognized", HttpStatus.BAD_REQUEST));
+
+        Instant graceUntil = Instant.now().plusSeconds(appProperties.qr().confirmGraceSeconds());
+        if (qrToken.getExpiresAt().isBefore(graceUntil)) {
+            qrToken.setExpiresAt(graceUntil);
+            qrTokenRepository.save(qrToken);
+        }
+
+        return new AttendanceDtos.ScanPreviewResponse(
+                session.getCourse().getCourseCode(),
+                session.getCourse().getCourseName(),
+                qrToken.getExpiresAt()
+        );
     }
 
     /**

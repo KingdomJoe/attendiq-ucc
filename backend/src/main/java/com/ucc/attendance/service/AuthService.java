@@ -210,4 +210,22 @@ public class AuthService {
         }
         return me();
     }
+
+    @Transactional
+    public void resetPassword(AuthDtos.ForgotPasswordRequest req) {
+        if (!req.newPassword().equals(req.confirmPassword())) {
+            throw new ApiException("PASSWORD_MISMATCH", "Passwords do not match", HttpStatus.BAD_REQUEST);
+        }
+        if (req.role() == UserRole.STUDENT) {
+            Student student = studentRepository.findByIndexNumberIgnoreCase(req.identifier().trim())
+                    .orElseThrow(() -> new ApiException("NOT_FOUND", "No student account found for that index number", HttpStatus.NOT_FOUND));
+            student.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+            studentRepository.save(student);
+            return;
+        }
+        Lecturer lecturer = lecturerRepository.findByLecturerCodeIgnoreCase(req.identifier().trim())
+                .orElseThrow(() -> new ApiException("NOT_FOUND", "No lecturer account found for that code", HttpStatus.NOT_FOUND));
+        lecturer.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+        lecturerRepository.save(lecturer);
+    }
 }

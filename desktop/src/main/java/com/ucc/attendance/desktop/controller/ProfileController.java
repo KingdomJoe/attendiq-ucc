@@ -4,11 +4,14 @@ import com.ucc.attendance.desktop.ApiClient;
 import com.ucc.attendance.desktop.App;
 import com.ucc.attendance.desktop.SessionManager;
 import com.ucc.attendance.desktop.util.FxUtils;
+import com.ucc.attendance.desktop.util.PasswordVisibilityHelper;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
 /**
@@ -18,13 +21,19 @@ public class ProfileController {
 
     @FXML private Label accountLabel;
     @FXML private TextField nameField;
+    @FXML private HBox currentPasswordBox;
     @FXML private PasswordField currentPasswordField;
+    @FXML private Button currentPasswordToggle;
+    @FXML private HBox newPasswordBox;
     @FXML private PasswordField newPasswordField;
+    @FXML private Button newPasswordToggle;
 
     private Runnable onSaved = () -> {};
 
     @FXML
     public void initialize() {
+        PasswordVisibilityHelper.wire(currentPasswordBox, currentPasswordField, currentPasswordToggle);
+        PasswordVisibilityHelper.wire(newPasswordBox, newPasswordField, newPasswordToggle);
         loadProfile();
     }
 

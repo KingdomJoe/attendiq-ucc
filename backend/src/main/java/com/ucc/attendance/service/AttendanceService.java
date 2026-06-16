@@ -27,12 +27,11 @@ public class AttendanceService {
     private final StudentRepository studentRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
 
-    /**
-     * Records attendance for the logged-in student. QR tokens are validated via
-     * {@link SessionService#resolveQrToken} but only consumed after a successful
-     * save — failed attempts must not invalidate the code (e.g. typoed index).
-     * Fraud controls: index match, enrollment, per-session student/device uniqueness, QR expiry.
-     */
+    public AttendanceDtos.ScanPreviewResponse previewScan(String token) {
+        SecurityUtils.requireRole(UserRole.STUDENT);
+        return sessionService.previewQrToken(token);
+    }
+
     @Transactional
     public AttendanceDtos.ScanResponse scan(AttendanceDtos.ScanRequest req, HttpServletRequest httpRequest) {
         UserPrincipal studentPrincipal = SecurityUtils.requireRole(UserRole.STUDENT);
@@ -79,8 +78,6 @@ public class AttendanceService {
             }
             throw new ApiException("DEVICE_ALREADY_USED", "This device has already been used to mark attendance in this session", HttpStatus.CONFLICT);
         }
-
-        sessionService.consumeQrToken(req.token());
 
         return new AttendanceDtos.ScanResponse(
                 "Attendance confirmed",

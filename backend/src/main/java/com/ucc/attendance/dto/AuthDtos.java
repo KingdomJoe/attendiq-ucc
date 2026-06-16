@@ -3,6 +3,7 @@ package com.ucc.attendance.dto;
 import com.ucc.attendance.domain.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public final class AuthDtos {
@@ -49,5 +50,12 @@ public final class AuthDtos {
             @NotBlank String name,
             String currentPassword,
             @Size(min = 8) String newPassword
+    ) {}
+
+    public record ForgotPasswordRequest(
+            @NotBlank String identifier,
+            @NotNull UserRole role,
+            @NotBlank @Size(min = 8) String newPassword,
+            @NotBlank String confirmPassword
     ) {}
 }

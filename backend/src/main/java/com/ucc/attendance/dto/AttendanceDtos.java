@@ -15,10 +15,18 @@ public final class AttendanceDtos {
             String deviceFingerprint
     ) {}
 
+    public record ScanPreviewRequest(@NotBlank String token) {}
+
     public record ScanResponse(
             String message,
             String courseCode,
             Instant attendanceTime
+    ) {}
+
+    public record ScanPreviewResponse(
+            String courseCode,
+            String courseName,
+            Instant expiresAt
     ) {}
 
     public record HistoryItem(

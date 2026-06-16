@@ -17,6 +17,13 @@ public class AttendanceController {
 
     private final AttendanceService attendanceService;
 
+    @PostMapping("/scan/preview")
+    @PreAuthorize("hasRole('STUDENT')")
+    public AttendanceDtos.ScanPreviewResponse previewScan(
+            @Valid @RequestBody AttendanceDtos.ScanPreviewRequest request) {
+        return attendanceService.previewScan(request.token());
+    }
+
     @PostMapping("/scan")
     @PreAuthorize("hasRole('STUDENT')")
     public AttendanceDtos.ScanResponse scan(

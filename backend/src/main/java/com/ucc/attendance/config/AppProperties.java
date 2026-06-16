@@ -10,5 +10,5 @@ public record AppProperties(
         String corsOrigins
 ) {
     public record Jwt(String secret, int expiryMinutes) {}
-    public record Qr(int ttlSeconds) {}
+    public record Qr(int ttlSeconds, int confirmGraceSeconds) {}
 }

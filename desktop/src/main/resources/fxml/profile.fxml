@@ -20,11 +20,17 @@
         </VBox>
         <VBox spacing="6">
             <Label text="Current password" styleClass="text-subtitle" />
-            <PasswordField fx:id="currentPasswordField" promptText="Required only when changing password" />
+            <HBox fx:id="currentPasswordBox" spacing="6" alignment="CENTER_LEFT">
+                <PasswordField fx:id="currentPasswordField" promptText="Required only when changing password" HBox.hgrow="ALWAYS"/>
+                <Button fx:id="currentPasswordToggle" styleClass="password-toggle"/>
+            </HBox>
         </VBox>
         <VBox spacing="6">
             <Label text="New password" styleClass="text-subtitle" />
-            <PasswordField fx:id="newPasswordField" promptText="Leave blank to keep current password" />
+            <HBox fx:id="newPasswordBox" spacing="6" alignment="CENTER_LEFT">
+                <PasswordField fx:id="newPasswordField" promptText="Leave blank to keep current password" HBox.hgrow="ALWAYS"/>
+                <Button fx:id="newPasswordToggle" styleClass="password-toggle"/>
+            </HBox>
         </VBox>
         <HBox spacing="10">
             <Button text="Save changes" onAction="#handleSave" styleClass="btn, btn-primary" />

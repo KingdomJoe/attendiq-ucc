@@ -3,17 +3,19 @@
 
     var DEVICE_KEY = "attendiq_device_id";
     var pendingToken = null;
+    var pendingExpiresAt = null;
     var confirming = false;
+    var expiryTimer = null;
 
     var ERROR_MESSAGES = {
         INVALID_INDEX: "Index number does not match your account.",
         ALREADY_MARKED: "You are already marked present for this session.",
         DEVICE_ALREADY_USED: "This device has already been used to mark attendance in this session.",
-        QR_EXPIRED: "This QR code has expired. Ask your lecturer to refresh it.",
+        QR_EXPIRED: "This QR code has expired. Ask your lecturer to refresh it, then scan the new code.",
         NOT_ENROLLED: "You are not enrolled in this course.",
-        QR_CONSUMED: "This QR code has already been used.",
+        QR_CONSUMED: "This QR code has already been used. Scan the latest code on screen.",
         SESSION_CLOSED: "This attendance session has ended.",
-        QR_INVALID: "Invalid QR code. Please scan again."
+        QR_INVALID: "Invalid QR code. Scan the latest code shown by your lecturer."
     };
 
     function getOrCreateDeviceId() {
@@ -60,6 +62,29 @@
         }
     }
 
+    function clearExpiryTimer() {
+        if (expiryTimer) {
+            window.clearInterval(expiryTimer);
+            expiryTimer = null;
+        }
+    }
+
+    function updateExpiryLabel() {
+        var expiryEl = el("scan-modal-expiry");
+        if (!expiryEl || !pendingExpiresAt) {
+            return;
+        }
+        var remainingMs = new Date(pendingExpiresAt).getTime() - Date.now();
+        if (remainingMs <= 0) {
+            expiryEl.textContent = "This code has expired — scan the latest QR on screen.";
+            expiryEl.classList.remove("hidden");
+            return;
+        }
+        var seconds = Math.ceil(remainingMs / 1000);
+        expiryEl.textContent = "Confirm within " + seconds + "s (lecturer screen refreshes every few seconds).";
+        expiryEl.classList.remove("hidden");
+    }
+
     function openModal() {
         var modal = el("scan-modal");
         if (modal) {
@@ -75,11 +100,23 @@
         }
         document.body.classList.remove("scan-modal-open");
         pendingToken = null;
+        pendingExpiresAt = null;
         confirming = false;
+        clearExpiryTimer();
         var confirmBtn = el("scan-modal-confirm-btn");
         if (confirmBtn) {
             confirmBtn.disabled = false;
             confirmBtn.textContent = "\u2714 Confirm Attendance";
+        }
+        var courseEl = el("scan-modal-course");
+        if (courseEl) {
+            courseEl.textContent = "";
+            courseEl.classList.add("hidden");
+        }
+        var expiryEl = el("scan-modal-expiry");
+        if (expiryEl) {
+            expiryEl.textContent = "";
+            expiryEl.classList.add("hidden");
         }
     }
 
@@ -93,8 +130,16 @@
         return "Could not mark attendance. Please try again.";
     }
 
-    function openConfirm(token) {
-        pendingToken = token;
+    function showConfirmUi(courseCode, courseName, expiresAt) {
+        var courseEl = el("scan-modal-course");
+        if (courseEl) {
+            courseEl.textContent = courseCode + " \u2014 " + courseName;
+            courseEl.classList.remove("hidden");
+        }
+        pendingExpiresAt = expiresAt;
+        updateExpiryLabel();
+        clearExpiryTimer();
+        expiryTimer = window.setInterval(updateExpiryLabel, 1000);
         showState("confirm");
         openModal();
         var input = el("scan-modal-index");
@@ -102,6 +147,61 @@
             input.focus();
             input.select();
         }
+    }
+
+    function openConfirm(token) {
+        pendingToken = token;
+        var confirmBtn = el("scan-modal-confirm-btn");
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = "Checking QR\u2026";
+        }
+        openModal();
+        showState("confirm");
+
+        fetch("/attendance/scan/preview", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: token })
+        })
+            .then(function (response) {
+                return response.text().then(function (text) {
+                    var data = {};
+                    if (text) {
+                        try {
+                            data = JSON.parse(text);
+                        } catch (e) {
+                            data = { message: text };
+                        }
+                    }
+                    return { ok: response.ok, data: data };
+                });
+            })
+            .then(function (result) {
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = "\u2714 Confirm Attendance";
+                }
+                if (!result.ok) {
+                    pendingToken = null;
+                    showError(mapError(result.data));
+                    return;
+                }
+                showConfirmUi(
+                    result.data.courseCode,
+                    result.data.courseName,
+                    result.data.expiresAt
+                );
+            })
+            .catch(function () {
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = "\u2714 Confirm Attendance";
+                }
+                pendingToken = null;
+                showError("Could not verify QR code. Check your connection and scan again.");
+            });
     }
 
     function showError(message) {
@@ -113,6 +213,7 @@
     }
 
     function showSuccess(courseCode, attendanceTime) {
+        clearExpiryTimer();
         var courseEl = el("scan-modal-success-course");
         var timeEl = el("scan-modal-success-time");
         if (courseEl) {
@@ -129,6 +230,10 @@
 
     function confirmAttendance() {
         if (!pendingToken || confirming) {
+            return;
+        }
+        if (pendingExpiresAt && new Date(pendingExpiresAt).getTime() <= Date.now()) {
+            showError(ERROR_MESSAGES.QR_EXPIRED);
             return;
         }
         var input = el("scan-modal-index");

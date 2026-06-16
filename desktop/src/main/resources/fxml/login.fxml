@@ -15,21 +15,23 @@
     <fx:define>
         <ToggleGroup fx:id="roleGroup"/>
         <ToggleGroup fx:id="loginRoleGroup"/>
+        <ToggleGroup fx:id="forgotRoleGroup"/>
     </fx:define>
 
-    <VBox alignment="CENTER" spacing="16" maxWidth="440" styleClass="card">
+    <VBox alignment="CENTER" spacing="16" maxWidth="480" styleClass="card">
         <Label text="AttendIQ" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #38bdf8;" />
         <Label text="Smart Attendance System" styleClass="text-subtitle" />
         <Label fx:id="statusLabel" text="Connecting..." styleClass="text-subtitle" style="-fx-font-size: 11px;" />
 
-        <HBox spacing="8" alignment="CENTER" styleClass="toggle-tab-bar">
+        <HBox spacing="6" alignment="CENTER" styleClass="toggle-tab-bar">
             <ToggleButton text="Sign In" fx:id="signInTab" toggleGroup="$roleGroup" selected="true" styleClass="toggle-tab"/>
             <ToggleButton text="Student Register" fx:id="studentRegisterTab" toggleGroup="$roleGroup" styleClass="toggle-tab"/>
             <ToggleButton text="Lecturer Register" fx:id="lecturerRegisterTab" toggleGroup="$roleGroup" styleClass="toggle-tab"/>
+            <ToggleButton text="Reset Password" fx:id="forgotPasswordTab" toggleGroup="$roleGroup" styleClass="toggle-tab"/>
         </HBox>
 
-        <Label fx:id="errorLabel" wrapText="true" maxWidth="400" style="-fx-text-fill: #ef4444; -fx-font-size: 13px;" visible="false"/>
-        <Label fx:id="successLabel" wrapText="true" maxWidth="400" style="-fx-text-fill: #22c55e; -fx-font-size: 13px;" visible="false"/>
+        <Label fx:id="errorLabel" wrapText="true" maxWidth="440" style="-fx-text-fill: #ef4444; -fx-font-size: 13px;" visible="false"/>
+        <Label fx:id="successLabel" wrapText="true" maxWidth="440" style="-fx-text-fill: #22c55e; -fx-font-size: 13px;" visible="false"/>
 
         <!-- Sign In -->
         <VBox fx:id="signInPane" spacing="12" prefWidth="400">
@@ -43,9 +45,13 @@
             </VBox>
             <VBox spacing="5">
                 <Label text="Password" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
-                <PasswordField fx:id="loginPasswordField" prefWidth="400"/>
+                <HBox fx:id="loginPasswordBox" spacing="6" alignment="CENTER_LEFT">
+                    <PasswordField fx:id="loginPasswordField" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="loginPasswordToggle" styleClass="password-toggle"/>
+                </HBox>
             </VBox>
             <Button fx:id="loginButton" text="Sign In" onAction="#handleLogin" styleClass="btn, btn-primary" prefWidth="400"/>
+            <Hyperlink text="Forgot your password?" onAction="#showForgotPassword" style="-fx-text-fill: #38bdf8;"/>
         </VBox>
 
         <!-- Student Register -->
@@ -68,7 +74,10 @@
             </VBox>
             <VBox spacing="5">
                 <Label text="Password" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
-                <PasswordField fx:id="studentPasswordField" prefWidth="400"/>
+                <HBox fx:id="studentPasswordBox" spacing="6" alignment="CENTER_LEFT">
+                    <PasswordField fx:id="studentPasswordField" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="studentPasswordToggle" styleClass="password-toggle"/>
+                </HBox>
             </VBox>
             <Button fx:id="studentRegisterButton" text="Register" onAction="#handleStudentRegister" styleClass="btn, btn-primary" prefWidth="400"/>
         </VBox>
@@ -89,9 +98,40 @@
             </VBox>
             <VBox spacing="5">
                 <Label text="Password" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
-                <PasswordField fx:id="lecturerPasswordField" prefWidth="400"/>
+                <HBox fx:id="lecturerPasswordBox" spacing="6" alignment="CENTER_LEFT">
+                    <PasswordField fx:id="lecturerPasswordField" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="lecturerPasswordToggle" styleClass="password-toggle"/>
+                </HBox>
             </VBox>
             <Button fx:id="lecturerRegisterButton" text="Register" onAction="#handleLecturerRegister" styleClass="btn, btn-primary" prefWidth="400"/>
+        </VBox>
+
+        <!-- Forgot Password -->
+        <VBox fx:id="forgotPasswordPane" spacing="12" prefWidth="400" visible="false" managed="false">
+            <Label text="Confirm your index number or lecturer code, then set a new password." wrapText="true" styleClass="text-subtitle"/>
+            <HBox spacing="16" alignment="CENTER" styleClass="role-radio-group">
+                <RadioButton text="Student" fx:id="forgotAsStudent" toggleGroup="$forgotRoleGroup" selected="true" styleClass="role-radio"/>
+                <RadioButton text="Lecturer" fx:id="forgotAsLecturer" toggleGroup="$forgotRoleGroup" styleClass="role-radio"/>
+            </HBox>
+            <VBox spacing="5">
+                <Label fx:id="forgotIdentifierLabel" text="Index Number" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <TextField fx:id="forgotIdentifierField" promptText="e.g. UCC/CS/0001/2023" prefWidth="400"/>
+            </VBox>
+            <VBox spacing="5">
+                <Label text="New Password" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <HBox fx:id="forgotNewPasswordBox" spacing="6" alignment="CENTER_LEFT">
+                    <PasswordField fx:id="forgotNewPasswordField" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="forgotNewPasswordToggle" styleClass="password-toggle"/>
+                </HBox>
+            </VBox>
+            <VBox spacing="5">
+                <Label text="Confirm New Password" style="-fx-font-size: 14px; -fx-text-fill: #cbd5e1;"/>
+                <HBox fx:id="forgotConfirmPasswordBox" spacing="6" alignment="CENTER_LEFT">
+                    <PasswordField fx:id="forgotConfirmPasswordField" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="forgotConfirmPasswordToggle" styleClass="password-toggle"/>
+                </HBox>
+            </VBox>
+            <Button fx:id="forgotPasswordButton" text="Update Password" onAction="#handleForgotPassword" styleClass="btn, btn-primary" prefWidth="400"/>
         </VBox>
     </VBox>
 </VBox>

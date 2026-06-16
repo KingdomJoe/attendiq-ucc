@@ -15,4 +15,6 @@ APP_CORS_ORIGINS=https://ucc-attendance-system.onrender.com
 
 # ── Optional ─────────────────────────────────────────────────────────
 # STUDENT_EMAIL_PATTERN=.*@ucc\.edu\.gh
+# APP_QR_TTL_SECONDS=90
+# APP_QR_CONFIRM_GRACE_SECONDS=60
 # PORT is injected automatically by Render (application.yml uses ${PORT:8080})

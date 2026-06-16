@@ -28,7 +28,9 @@ app:
     secret: ${JWT_SECRET:dev-jwt-secret-change-in-production-min-32-chars!!}
     expiry-minutes: 480
   qr:
-    ttl-seconds: 5
+    # Each issued QR remains valid long enough for scan + confirm modal (rotation on desktop is still ~5s).
+    ttl-seconds: ${APP_QR_TTL_SECONDS:90}
+    confirm-grace-seconds: ${APP_QR_CONFIRM_GRACE_SECONDS:60}
   student-email-pattern: ${STUDENT_EMAIL_PATTERN:.*@.*}
   cors-origins: ${APP_CORS_ORIGINS:http://localhost:8080}
 

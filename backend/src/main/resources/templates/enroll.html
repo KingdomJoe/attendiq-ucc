@@ -29,7 +29,10 @@
             <input type="hidden" name="departmentCode" th:value="${departmentCode}">
             <div class="form-group">
                 <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-input" minlength="8" required>
+                <div class="password-input-wrap">
+                    <input type="password" name="password" class="form-input" minlength="8" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="Show password">&#x1F441;&#xFE0F;</button>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Create Account &amp; Enroll</button>
         </form>
@@ -41,5 +44,6 @@
     </div>
 </main>
 
+<script src="/js/auth-password.js"></script>
 </body>
 </html>

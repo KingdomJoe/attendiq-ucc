@@ -37,4 +37,9 @@ public class AuthController {
     public AuthDtos.MeResponse updateProfile(@Valid @RequestBody AuthDtos.UpdateProfileRequest request) {
         return authService.updateProfile(request);
     }
+
+    @PostMapping("/forgot-password")
+    public void forgotPassword(@Valid @RequestBody AuthDtos.ForgotPasswordRequest request) {
+        authService.resetPassword(request);
+    }
 }

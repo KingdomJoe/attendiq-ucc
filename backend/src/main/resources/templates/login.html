@@ -11,19 +11,17 @@
             <p>Smart Attendance System</p>
         </div>
 
-        <!-- Error message -->
         <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
-        <!-- Success message -->
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
 
-        <!-- Tabs -->
         <div class="tabs">
             <a href="/?tab=login" class="tab" th:classappend="${tab == null || tab == 'login'} ? 'active' : ''">Login</a>
             <a href="/?tab=register-student" class="tab" th:classappend="${tab == 'register-student'} ? 'active' : ''">Student Register</a>
             <a href="/?tab=register-lecturer" class="tab" th:classappend="${tab == 'register-lecturer'} ? 'active' : ''">Lecturer Register</a>
+            <a href="/?tab=forgot-password" class="tab" th:classappend="${tab == 'forgot-password'} ? 'active' : ''">Reset Password</a>
         </div>
 
-        <!-- ═══ LOGIN FORM ═══ -->
+        <!-- LOGIN -->
         <form th:if="${tab == null || tab == 'login'}" th:action="@{/login}" th:object="${loginForm}" method="post">
             <div class="form-group">
                 <label class="form-label" for="role">Role</label>
@@ -40,13 +38,19 @@
             </div>
             <div class="form-group">
                 <label class="form-label" for="password">Password</label>
-                <input type="password" id="password" th:field="*{password}" class="form-input" placeholder="Enter password" required>
+                <div class="password-input-wrap">
+                    <input type="password" id="password" th:field="*{password}" class="form-input" placeholder="Enter password" required autocomplete="current-password">
+                    <button type="button" class="password-toggle" aria-label="Show password">&#x1F441;&#xFE0F;</button>
+                </div>
                 <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="field-error"></p>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+            <p class="text-center text-sm text-muted" style="margin-top: 1rem;">
+                <a href="/?tab=forgot-password">Forgot your password?</a>
+            </p>
         </form>
 
-        <!-- ═══ STUDENT REGISTER FORM ═══ -->
+        <!-- STUDENT REGISTER -->
         <form th:if="${tab == 'register-student'}" th:action="@{/register/student}" th:object="${studentRegisterForm}" method="post">
             <div class="form-group">
                 <label class="form-label" for="student-name">Full Name</label>
@@ -73,13 +77,16 @@
             </div>
             <div class="form-group">
                 <label class="form-label" for="student-password">Password</label>
-                <input type="password" id="student-password" th:field="*{password}" class="form-input" placeholder="Create a password" required>
+                <div class="password-input-wrap">
+                    <input type="password" id="student-password" th:field="*{password}" class="form-input" placeholder="Create a password" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="Show password">&#x1F441;&#xFE0F;</button>
+                </div>
                 <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="field-error"></p>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Register</button>
         </form>
 
-        <!-- ═══ LECTURER REGISTER FORM ═══ -->
+        <!-- LECTURER REGISTER -->
         <form th:if="${tab == 'register-lecturer'}" th:action="@{/register/lecturer}" th:object="${lecturerRegisterForm}" method="post">
             <div class="form-group">
                 <label class="form-label" for="lecturer-name">Full Name</label>
@@ -101,21 +108,64 @@
             </div>
             <div class="form-group">
                 <label class="form-label" for="lecturer-password">Password</label>
-                <input type="password" id="lecturer-password" th:field="*{password}" class="form-input" placeholder="Create a password" required>
+                <div class="password-input-wrap">
+                    <input type="password" id="lecturer-password" th:field="*{password}" class="form-input" placeholder="Create a password" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="Show password">&#x1F441;&#xFE0F;</button>
+                </div>
                 <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="field-error"></p>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Register</button>
         </form>
 
-        <!-- Lecturer Download Link -->
+        <!-- FORGOT PASSWORD -->
+        <form th:if="${tab == 'forgot-password'}" th:action="@{/forgot-password}" th:object="${forgotPasswordForm}" method="post">
+            <p class="text-sm text-muted" style="margin-bottom: 1rem;">
+                Confirm your index number or lecturer code, then set a new password. No email is required.
+            </p>
+            <div class="form-group">
+                <label class="form-label" for="forgot-role">Role</label>
+                <select id="forgot-role" th:field="*{role}" class="form-select" required>
+                    <option value="STUDENT">Student</option>
+                    <option value="LECTURER">Lecturer</option>
+                </select>
+                <p th:if="${#fields.hasErrors('role')}" th:errors="*{role}" class="field-error"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="forgot-identifier">Index Number / Lecturer Code</label>
+                <input type="text" id="forgot-identifier" th:field="*{identifier}" class="form-input" placeholder="e.g. UCC/CS/0001/2023 or LEC001" required>
+                <p th:if="${#fields.hasErrors('identifier')}" th:errors="*{identifier}" class="field-error"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="forgot-new-password">New Password</label>
+                <div class="password-input-wrap">
+                    <input type="password" id="forgot-new-password" th:field="*{newPassword}" class="form-input" placeholder="At least 8 characters" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="Show password">&#x1F441;&#xFE0F;</button>
+                </div>
+                <p th:if="${#fields.hasErrors('newPassword')}" th:errors="*{newPassword}" class="field-error"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="forgot-confirm-password">Confirm New Password</label>
+                <div class="password-input-wrap">
+                    <input type="password" id="forgot-confirm-password" th:field="*{confirmPassword}" class="form-input" placeholder="Re-enter new password" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="Show password">&#x1F441;&#xFE0F;</button>
+                </div>
+                <p th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}" class="field-error"></p>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Update Password</button>
+            <p class="text-center text-sm text-muted" style="margin-top: 1rem;">
+                <a href="/?tab=login">Back to sign in</a>
+            </p>
+        </form>
+
         <div style="margin-top: 2rem; text-align: center; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
             <p style="color: var(--text-secondary); margin-bottom: 0.75rem; font-size: 0.9rem;">Lecturers manage sessions via the Windows Desktop App.</p>
             <a href="/lecturer-download" class="btn btn-secondary" style="display: inline-block; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 0.375rem; text-decoration: none; color: var(--text-primary);">
-                ⬇ Download Desktop App
+                &#x2B07; Download Desktop App
             </a>
         </div>
     </div>
 </div>
 
+<script src="/js/auth-password.js"></script>
 </body>
 </html>

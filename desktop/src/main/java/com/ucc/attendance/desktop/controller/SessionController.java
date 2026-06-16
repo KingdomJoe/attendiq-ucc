@@ -112,7 +112,7 @@ public class SessionController {
                 refreshQrCode();
                 countdownSeconds = 5;
             }
-            refreshLabel.setText("Refreshing in " + countdownSeconds + "s…");
+            refreshLabel.setText("New code in " + countdownSeconds + "s (scanned codes stay valid)");
         }));
         qrTimeline.setCycleCount(Timeline.INDEFINITE);
         qrTimeline.play();

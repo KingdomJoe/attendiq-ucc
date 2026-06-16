@@ -97,4 +97,28 @@ public final class WebForms {
         public String getNewPassword() { return newPassword; }
         public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
     }
+
+    public static class ForgotPasswordForm {
+        @NotNull(message = "Please select a role")
+        private UserRole role;
+
+        @NotBlank(message = "Index number or lecturer code is required")
+        private String identifier;
+
+        @NotBlank(message = "New password is required")
+        @Size(min = 8, message = "Password must be at least 8 characters")
+        private String newPassword;
+
+        @NotBlank(message = "Please confirm your password")
+        private String confirmPassword;
+
+        public UserRole getRole() { return role; }
+        public void setRole(UserRole role) { this.role = role; }
+        public String getIdentifier() { return identifier; }
+        public void setIdentifier(String identifier) { this.identifier = identifier; }
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+        public String getConfirmPassword() { return confirmPassword; }
+        public void setConfirmPassword(String confirmPassword) { this.confirmPassword = confirmPassword; }
+    }
 }

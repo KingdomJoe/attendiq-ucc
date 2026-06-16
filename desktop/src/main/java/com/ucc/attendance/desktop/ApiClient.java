@@ -33,6 +33,7 @@ public class ApiClient {
     public record AuthResponse(String token, String role, Long userId, String displayName) {}
     public record MeResponse(Long userId, String role, String displayName, String emailOrCode, String indexNumber) {}
     public record UpdateProfileRequest(String name, String currentPassword, String newPassword) {}
+    public record ForgotPasswordRequest(String identifier, String role, String newPassword, String confirmPassword) {}
     public record DepartmentResponse(String code, String name) {}
     
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -173,6 +174,14 @@ public class ApiClient {
         }
     }
 
+    private static void sendVoidRequest(HttpRequest request) throws IOException, InterruptedException {
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            return;
+        }
+        throw new RuntimeException("API Error (HTTP " + response.statusCode() + "): " + getErrorMessage(response.body(), response.statusCode()));
+    }
+
     private static String getErrorMessage(String responseBody, int statusCode) {
         try {
             var node = mapper.readTree(responseBody);
@@ -253,6 +262,18 @@ public class ApiClient {
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
             return sendRequest(request, AuthResponse.class);
+        });
+    }
+
+    public static void forgotPassword(String identifier, String role, String newPassword, String confirmPassword) throws Exception {
+        safeExecute(() -> {
+            ForgotPasswordRequest req = new ForgotPasswordRequest(identifier, role, newPassword, confirmPassword);
+            String json = mapper.writeValueAsString(req);
+            HttpRequest request = requestBuilder("/auth/forgot-password")
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+            sendVoidRequest(request);
+            return null;
         });
     }
 

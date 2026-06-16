@@ -59,6 +59,11 @@ public class WebController {
         if (!model.containsAttribute("lecturerRegisterForm")) {
             model.addAttribute("lecturerRegisterForm", new WebForms.LecturerRegisterForm());
         }
+        if (!model.containsAttribute("forgotPasswordForm")) {
+            WebForms.ForgotPasswordForm forgot = new WebForms.ForgotPasswordForm();
+            forgot.setRole(UserRole.STUDENT);
+            model.addAttribute("forgotPasswordForm", forgot);
+        }
         return "login";
     }
 
@@ -157,6 +162,43 @@ public class WebController {
             model.addAttribute("error", errorMsg);
             model.addAttribute("departments", departmentRepository.findAll());
             model.addAttribute("tab", "register-lecturer");
+            return "login";
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public String forgotPassword(
+            @Valid @ModelAttribute("forgotPasswordForm") WebForms.ForgotPasswordForm form,
+            BindingResult bindingResult,
+            Model model) {
+        if (!form.getNewPassword().equals(form.getConfirmPassword())) {
+            bindingResult.rejectValue("confirmPassword", "mismatch", "Passwords do not match");
+        }
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("departments", departmentRepository.findAll());
+            model.addAttribute("tab", "forgot-password");
+            return "login";
+        }
+        try {
+            authService.resetPassword(new AuthDtos.ForgotPasswordRequest(
+                    form.getIdentifier().trim(),
+                    form.getRole(),
+                    form.getNewPassword(),
+                    form.getConfirmPassword()));
+            model.addAttribute("success", "Password updated. You can sign in with your new password.");
+            model.addAttribute("departments", departmentRepository.findAll());
+            model.addAttribute("tab", "login");
+            model.addAttribute("loginForm", new WebForms.LoginForm());
+            return "login";
+        } catch (ApiException e) {
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("departments", departmentRepository.findAll());
+            model.addAttribute("tab", "forgot-password");
+            return "login";
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage() != null ? e.getMessage() : "Password reset failed");
+            model.addAttribute("departments", departmentRepository.findAll());
+            model.addAttribute("tab", "forgot-password");
             return "login";
         }
     }

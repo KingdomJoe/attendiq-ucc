@@ -3,9 +3,11 @@ package com.ucc.attendance.desktop.controller;
 import com.ucc.attendance.desktop.ApiClient;
 import com.ucc.attendance.desktop.SessionManager;
 import com.ucc.attendance.desktop.App;
+import com.ucc.attendance.desktop.util.PasswordVisibilityHelper;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.util.List;
@@ -25,6 +27,7 @@ public class LoginController {
     @FXML private ToggleButton signInTab;
     @FXML private ToggleButton studentRegisterTab;
     @FXML private ToggleButton lecturerRegisterTab;
+    @FXML private ToggleButton forgotPasswordTab;
 
     // ── Sign In Pane ───────────────────────────────────
     @FXML private VBox signInPane;
@@ -33,7 +36,9 @@ public class LoginController {
     @FXML private ToggleGroup loginRoleGroup;
     @FXML private Label identifierLabel;
     @FXML private TextField loginIdentifierField;
+    @FXML private HBox loginPasswordBox;
     @FXML private PasswordField loginPasswordField;
+    @FXML private Button loginPasswordToggle;
     @FXML private Button loginButton;
 
     // ── Student Register Pane ──────────────────────────
@@ -42,7 +47,9 @@ public class LoginController {
     @FXML private TextField studentEmailField;
     @FXML private TextField studentIndexField;
     @FXML private ComboBox<String> studentDeptCombo;
+    @FXML private HBox studentPasswordBox;
     @FXML private PasswordField studentPasswordField;
+    @FXML private Button studentPasswordToggle;
     @FXML private Button studentRegisterButton;
 
     // ── Lecturer Register Pane ─────────────────────────
@@ -50,8 +57,25 @@ public class LoginController {
     @FXML private TextField lecturerNameField;
     @FXML private TextField lecturerCodeField;
     @FXML private ComboBox<String> lecturerDeptCombo;
+    @FXML private HBox lecturerPasswordBox;
     @FXML private PasswordField lecturerPasswordField;
+    @FXML private Button lecturerPasswordToggle;
     @FXML private Button lecturerRegisterButton;
+
+    // ── Forgot Password Pane ───────────────────────────
+    @FXML private VBox forgotPasswordPane;
+    @FXML private ToggleGroup forgotRoleGroup;
+    @FXML private RadioButton forgotAsStudent;
+    @FXML private RadioButton forgotAsLecturer;
+    @FXML private Label forgotIdentifierLabel;
+    @FXML private TextField forgotIdentifierField;
+    @FXML private HBox forgotNewPasswordBox;
+    @FXML private PasswordField forgotNewPasswordField;
+    @FXML private Button forgotNewPasswordToggle;
+    @FXML private HBox forgotConfirmPasswordBox;
+    @FXML private PasswordField forgotConfirmPasswordField;
+    @FXML private Button forgotConfirmPasswordToggle;
+    @FXML private Button forgotPasswordButton;
 
     // ── Department data cache ──────────────────────────
     private List<ApiClient.DepartmentResponse> departments;
@@ -79,6 +103,22 @@ public class LoginController {
             }
         });
 
+        forgotRoleGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == forgotAsLecturer) {
+                forgotIdentifierLabel.setText("Lecturer Code");
+                forgotIdentifierField.setPromptText("e.g. UCC-LEC-A7X9");
+            } else {
+                forgotIdentifierLabel.setText("Index Number");
+                forgotIdentifierField.setPromptText("e.g. UCC/CS/0001/2023");
+            }
+        });
+
+        PasswordVisibilityHelper.wire(loginPasswordBox, loginPasswordField, loginPasswordToggle);
+        PasswordVisibilityHelper.wire(studentPasswordBox, studentPasswordField, studentPasswordToggle);
+        PasswordVisibilityHelper.wire(lecturerPasswordBox, lecturerPasswordField, lecturerPasswordToggle);
+        PasswordVisibilityHelper.wire(forgotNewPasswordBox, forgotNewPasswordField, forgotNewPasswordToggle);
+        PasswordVisibilityHelper.wire(forgotConfirmPasswordBox, forgotConfirmPasswordField, forgotConfirmPasswordToggle);
+
         // Load departments in background for the registration dropdowns
         loadDepartments();
     }
@@ -93,6 +133,14 @@ public class LoginController {
         studentRegisterPane.setManaged(selected == studentRegisterTab);
         lecturerRegisterPane.setVisible(selected == lecturerRegisterTab);
         lecturerRegisterPane.setManaged(selected == lecturerRegisterTab);
+        forgotPasswordPane.setVisible(selected == forgotPasswordTab);
+        forgotPasswordPane.setManaged(selected == forgotPasswordTab);
+    }
+
+    @FXML
+    private void showForgotPassword() {
+        clearMessages();
+        roleGroup.selectToggle(forgotPasswordTab);
     }
 
     /**
@@ -236,6 +284,50 @@ public class LoginController {
                 Platform.runLater(() -> {
                     lecturerRegisterButton.setDisable(false);
                     showError(e.getMessage() != null ? e.getMessage() : "Registration failed. Please try again.");
+                });
+            }
+        });
+    }
+
+    // ── Forgot Password Handler ────────────────────────
+
+    @FXML
+    private void handleForgotPassword() {
+        String identifier = forgotIdentifierField.getText().trim();
+        String newPassword = forgotNewPasswordField.getText();
+        String confirmPassword = forgotConfirmPasswordField.getText();
+        String role = forgotAsLecturer.isSelected() ? "LECTURER" : "STUDENT";
+
+        if (identifier.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
+            showError("Please fill in all fields.");
+            return;
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            showError("Passwords do not match.");
+            return;
+        }
+        if (newPassword.length() < 8) {
+            showError("Password must be at least 8 characters.");
+            return;
+        }
+
+        forgotPasswordButton.setDisable(true);
+        clearMessages();
+
+        runInBackground(() -> {
+            try {
+                ApiClient.forgotPassword(identifier, role, newPassword, confirmPassword);
+                Platform.runLater(() -> {
+                    forgotPasswordButton.setDisable(false);
+                    forgotNewPasswordField.clear();
+                    forgotConfirmPasswordField.clear();
+                    showSuccess("Password updated. Sign in with your new password.");
+                    roleGroup.selectToggle(signInTab);
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    forgotPasswordButton.setDisable(false);
+                    showError(e.getMessage() != null ? e.getMessage() : "Password reset failed.");
                 });
             }
         });
