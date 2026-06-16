@@ -6,7 +6,7 @@
 
     <groupId>com.ucc</groupId>
     <artifactId>attendance-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.2.0</version>
     <packaging>pom</packaging>
     <name>UCC Attendance System</name>
     <description>AttendIQ — UCC smart attendance (Spring Boot web + JavaFX desktop). Production: https://ucc-attendance-system.onrender.com</description>
