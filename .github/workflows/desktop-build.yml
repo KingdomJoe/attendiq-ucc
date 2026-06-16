@@ -4,7 +4,7 @@ on:
   push:
     branches: ["main"]
     tags:
-      - "v*.*.*"   # semver tags only (e.g. v1.0.0, v1.0.0-beta.1) — rejects vtest, vbeta
+      - "v*"   # semver enforced in release job via matches()
   pull_request:
     branches: ["main"]
   workflow_dispatch:
@@ -42,7 +42,7 @@ jobs:
             Write-Error "Tag '$tag' must start with v and use semver (e.g. v1.0.0 or v1.0.0-beta.1)."
             exit 1
           } else {
-            $raw = "1.0.0-SNAPSHOT"
+            $raw = "1.2.0-SNAPSHOT"
           }
 
           # jpackage requires numeric dotted version (strip -beta / -rc suffixes)
